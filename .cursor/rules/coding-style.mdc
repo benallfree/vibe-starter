@@ -1,0 +1,7 @@
+---
+description: Coding style
+globs: 
+alwaysApply: false
+---
+* Prefer early returns
+* Prefer factory functions over classes

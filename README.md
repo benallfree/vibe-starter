@@ -2,6 +2,10 @@
 
 Welcome to the Vibe Coding Starter Kit! This project provides a robust foundation for AI-driven development using a 100% TypeScript stack to maximize context management and developer experience.
 
+## Getting Started
+
+Begin by asking AI to read this document. If you are using Cursor, it will automatically find the `.cursor` directory with other rules as well.
+
 ## What is Vibe Coding?
 
 Vibe Coding is an AI-driven development methodology that focuses on outcomes rather than tactics. It leverages the power of AI to streamline the development process, allowing you to rapidly prototype and build applications by "vibing" with AI tools to generate and refine your code.
@@ -26,9 +30,9 @@ Don't write your specifications manually. Instead, use AI to help you generate a
 
 With your spec in hand, use AI to help you implement features one by one. Describe the feature you want and collaborate with AI to bring it to life.
 
-### Step 3: Ask AI to Occasionally Refactor and Reorganize
+### Step 3: Ask AI to Frquently Refactor and Reorganize
 
-As your codebase grows, periodically ask AI to suggest refactorings and code reorganizations. This keeps your code clean and maintainable.
+After each successful feature, ask AI to refactor. This is important for managing complexity that can clutter the context window and cause the app to collapse under the sheer complexity of possible code interactions and side effects.
 
 ### Step 4: Profit
 

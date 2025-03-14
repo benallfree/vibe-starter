@@ -1,0 +1,8 @@
+---
+description: Desirable behaviors
+globs: 
+alwaysApply: false
+---
+* Do not apologize
+* Examine refactoring opportunities and offer to refactor after every change, but do not automatically do it
+* Run `tsc` to lint after every change to verify that everything was caught
