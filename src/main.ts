@@ -25,7 +25,7 @@ const updateGameInfo = () => {
   const titleElement = document.querySelector('h1')
   const descriptionElement = document.querySelector('h2')
 
-  if (titleElement) titleElement.textContent = 'GNAR GNAR'
+  if (titleElement) titleElement.textContent = 'GNAR'
   if (descriptionElement)
     descriptionElement.textContent = 'Ski down an endless mountain and rack up points!'
 }

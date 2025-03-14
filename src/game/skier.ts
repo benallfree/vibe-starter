@@ -559,6 +559,42 @@ export const createSkier = (scene: THREE.Scene) => {
     return flipCount
   }
 
+  // Reset flip count after awarding points
+  const resetFlipCount = () => {
+    flipCount = 0
+  }
+
+  // Add an extra life when hot chocolate is collected (no maximum)
+  const gainExtraLife = () => {
+    // Always increment life count (no maximum)
+    lives++
+
+    console.log(`Life gained! New life count: ${lives}`)
+
+    // Create a visual effect to show life gain
+    if (skierMesh) {
+      // Create a brief visual highlight effect on the skier
+      const originalColor = (skierMesh.children[0] as THREE.Mesh)
+        .material as THREE.MeshStandardMaterial
+      const originalColorValue = originalColor.color.clone()
+
+      // Flash green briefly
+      originalColor.color.set(0x00ff00)
+      originalColor.emissive.set(0x00ff00)
+      originalColor.emissiveIntensity = 0.5
+
+      // Reset color after a short delay
+      setTimeout(() => {
+        originalColor.color.copy(originalColorValue)
+        originalColor.emissive.set(0x000000)
+        originalColor.emissiveIntensity = 0
+      }, 300)
+    }
+
+    // Always return true since we always gain a life
+    return true
+  }
+
   // Return public API
   return {
     initialize,
@@ -574,5 +610,8 @@ export const createSkier = (scene: THREE.Scene) => {
     getIsTumbling,
     getIsJumping,
     getFlipCount,
+    resetFlipCount,
+    gainExtraLife,
+    createPointIndicator,
   }
 }

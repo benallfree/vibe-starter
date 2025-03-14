@@ -27,6 +27,7 @@ export const createSkiGame = (container: HTMLElement) => {
   let gameOverScreen: HTMLElement | null = null
   let lifeMessageDisplay: HTMLElement | null = null
   let lifeMessageTimeout: number | null = null
+  let extraLifeMessageDisplay: HTMLElement | null = null // New UI element for hot chocolate pickup
 
   // Set up renderer
   renderer.setSize(window.innerWidth, window.innerHeight)
@@ -255,6 +256,28 @@ export const createSkiGame = (container: HTMLElement) => {
 
       container.appendChild(gameOverScreen)
     }
+
+    // Create extra life message (hidden initially)
+    if (!extraLifeMessageDisplay) {
+      extraLifeMessageDisplay = document.createElement('div')
+      extraLifeMessageDisplay.id = 'extra-life-message'
+      extraLifeMessageDisplay.style.position = 'absolute'
+      extraLifeMessageDisplay.style.top = '40%'
+      extraLifeMessageDisplay.style.left = '50%'
+      extraLifeMessageDisplay.style.transform = 'translate(-50%, -50%)'
+      extraLifeMessageDisplay.style.color = '#2fc82f' // Green color for good things
+      extraLifeMessageDisplay.style.fontSize = '36px'
+      extraLifeMessageDisplay.style.fontFamily = 'Arial, sans-serif'
+      extraLifeMessageDisplay.style.fontWeight = 'bold'
+      extraLifeMessageDisplay.style.textShadow = '2px 2px 4px #000'
+      extraLifeMessageDisplay.style.display = 'none'
+      extraLifeMessageDisplay.style.padding = '15px 30px'
+      extraLifeMessageDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+      extraLifeMessageDisplay.style.borderRadius = '10px'
+      extraLifeMessageDisplay.style.zIndex = '200'
+      extraLifeMessageDisplay.textContent = '☕ HOT CHOCOLATE! +1 LIFE ☕'
+      container.appendChild(extraLifeMessageDisplay)
+    }
   }
 
   // Update lives display
@@ -310,6 +333,53 @@ export const createSkiGame = (container: HTMLElement) => {
     }
   }
 
+  // Show extra life message
+  const showExtraLifeMessage = () => {
+    if (extraLifeMessageDisplay) {
+      extraLifeMessageDisplay.style.display = 'block'
+
+      // Hide after 2 seconds
+      window.setTimeout(() => {
+        if (extraLifeMessageDisplay) {
+          extraLifeMessageDisplay.style.display = 'none'
+        }
+      }, 2000)
+    }
+  }
+
+  // Handle hot chocolate pickup
+  const handleHotChocolatePickup = (obstacle: any) => {
+    console.log('Hot chocolate picked up!')
+
+    // Prevent double collection by marking it as not collidable first
+    obstacle.isCollidable = false
+
+    // Gain an extra life
+    const lifeGained = skier.gainExtraLife()
+
+    if (lifeGained) {
+      const currentLives = skier.getLives()
+      console.log('Extra life gained! Lives now:', currentLives)
+
+      // Update message to show current lives
+      if (extraLifeMessageDisplay) {
+        extraLifeMessageDisplay.textContent = `☕ HOT CHOCOLATE! LIVES: ${currentLives} ☕`
+      }
+
+      // Show message
+      showExtraLifeMessage()
+
+      // Update the UI
+      updateLivesDisplay()
+
+      // Create floating point indicator
+      skier.createPointIndicator('☕', skier.getPosition())
+    }
+
+    // Remove hot chocolate from scene
+    scene.remove(obstacle.mesh)
+  }
+
   // Animation loop
   const animate = () => {
     if (!isGameRunning) return
@@ -338,6 +408,9 @@ export const createSkiGame = (container: HTMLElement) => {
 
         // Add points for flips (50 per flip)
         score += flipCount * 50
+
+        // Reset flip count after awarding points
+        skier.resetFlipCount()
       }
     }
 
@@ -347,20 +420,54 @@ export const createSkiGame = (container: HTMLElement) => {
     // Update snow particles
     updateSnow()
 
-    // Update obstacles and check for collisions
-    const collisionResult = obstacleManager.update(speed, skier.getPosition())
+    // Get current skier position for collision detection
+    const skierPosition = skier.getPosition()
 
-    // Check if player crashed into a tree or rock
-    if (collisionResult.collision) {
-      handleCollision()
-    }
-    // Check if player hit a jump
-    else if (collisionResult.jumpCollision) {
-      // Trigger jump and flip
-      skier.checkJumpCollision(collisionResult.obstacleType, speed)
+    // Update obstacles
+    obstacleManager.update(speed, skierPosition)
 
-      // Base points for jumps already handled in skier.ts with floating indicators
-      score += 10 // Base jump bonus
+    // Check for collisions with all obstacle types
+    // First, prioritize checking for hot chocolate pickups
+    const obstacles = obstacleManager.getObstacles()
+
+    // Don't check for collisions if already tumbling
+    if (!skier.getIsTumbling()) {
+      // First pass: check only for hot chocolate (higher priority)
+      for (const obstacle of obstacles) {
+        if (
+          obstacle.type === 'hotChocolate' &&
+          obstacle.isPickup &&
+          obstacle.isCollidable &&
+          obstacleManager.isColliding(skierPosition, obstacle)
+        ) {
+          handleHotChocolatePickup(obstacle)
+          // Continue the loop as we want to check all hot chocolates
+        }
+      }
+
+      // Second pass: check for jumps and crashes
+      let hasCollided = false
+      for (const obstacle of obstacles) {
+        // Skip hot chocolates as we already handled them
+        if (obstacle.type === 'hotChocolate') continue
+
+        // Skip if we've already had a collision
+        if (hasCollided) continue
+
+        // Check if colliding with this obstacle
+        if (obstacleManager.isColliding(skierPosition, obstacle)) {
+          if (obstacle.type === 'jumpRamp') {
+            // Handle jump ramp
+            skier.checkJumpCollision(obstacle.type, speed)
+            // Add points for jumps
+            score += 10
+          } else if (obstacle.isCollidable && !skier.getIsJumping()) {
+            // Handle crash with tree or rock
+            handleCollision()
+            hasCollided = true
+          }
+        }
+      }
     }
 
     // Gradually increase speed
@@ -372,7 +479,7 @@ export const createSkiGame = (container: HTMLElement) => {
     // Update camera to follow skier
     updateCameraPosition()
 
-    // Continue animation loop (keeping only this call)
+    // Continue animation loop
     animationFrameId = requestAnimationFrame(animate)
   }
 
@@ -441,6 +548,11 @@ export const createSkiGame = (container: HTMLElement) => {
 
     if (lifeMessageDisplay) {
       lifeMessageDisplay.style.display = 'none'
+    }
+
+    // Clear extra life message too
+    if (extraLifeMessageDisplay) {
+      extraLifeMessageDisplay.style.display = 'none'
     }
 
     // Restart the game

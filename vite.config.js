@@ -9,7 +9,7 @@ export default defineConfig({
         ws: true,
       },
     },
-    allowedHosts: ['7cc9-172-56-170-26.ngrok-free.app'],
+    allowedHosts: ['6433-172-56-168-170.ngrok-free.app'],
   },
   resolve: {
     alias: {
