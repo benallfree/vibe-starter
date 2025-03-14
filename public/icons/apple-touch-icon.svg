@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <!-- Background with rounded corners -->
+  <rect width="180" height="180" fill="#3D405B" rx="40" ry="40" />
+  
+  <!-- Game icon group -->
+  <g id="gameicon">
+    <!-- Game controller body -->
+    <path d="
+      M 45 65
+    C 40 80, 40 100, 45 115
+    C 50 130, 65 140, 90 140
+    C 115 140, 130 130, 135 115
+    C 140 100, 140 80, 135 65
+    C 130 50, 115 40, 90 40
+    C 65 40, 50 50, 45 65
+    Z" 
+    fill="#F4F1DE" 
+    stroke="#E07A5F" 
+    stroke-width="3" />
+    
+    <!-- Left joystick -->
+    <circle cx="65" cy="80" r="12" fill="#E07A5F" stroke="#3D405B" stroke-width="2" />
+    <circle cx="65" cy="80" r="6" fill="#3D405B" />
+    
+    <!-- Right joystick -->
+    <circle cx="115" cy="80" r="12" fill="#E07A5F" stroke="#3D405B" stroke-width="2" />
+    <circle cx="115" cy="80" r="6" fill="#3D405B" />
+    
+    <!-- D-pad -->
+    <rect x="52" y="105" width="26" height="8" rx="2" ry="2" fill="#3D405B" />
+    <rect x="61" y="96" width="8" height="26" rx="2" ry="2" fill="#3D405B" />
+    
+    <!-- Action buttons -->
+    <circle cx="108" cy="109" r="5" fill="#81B29A" stroke="#3D405B" stroke-width="1" />
+    <circle cx="118" cy="109" r="5" fill="#F2CC8F" stroke="#3D405B" stroke-width="1" />
+    <circle cx="113" cy="104" r="5" fill="#E07A5F" stroke="#3D405B" stroke-width="1" />
+    <circle cx="113" cy="114" r="5" fill="#3D405B" stroke="#F4F1DE" stroke-width="1" />
+  </g>
+</svg> 

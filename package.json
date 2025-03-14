@@ -1,0 +1,53 @@
+{
+  "name": "rawhide",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently 'bun:dev:*'",
+    "dev:vite": "vite dev",
+    "dev:server": "bun server/index.ts  --watch",
+    "build": "vite build",
+    "build:production": "vite build && mkdir -p build && cp -r dist build/ && cp -r server build/",
+    "preview": "vite preview",
+    "start": "NODE_ENV=production bun build/server/index.ts",
+    "generate-icons": "bun run scripts/generate-icons.ts"
+  },
+  "dependencies": {
+    "@types/three": "^0.174.0",
+    "express": "^4.18.3",
+    "socket.io": "^4.7.4",
+    "socket.io-client": "^4.7.4",
+    "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.25",
+    "concurrently": "^8.2.2",
+    "prettier": "^3.4.2",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "prettier-plugin-svelte": "^3.3.3",
+    "typescript": "^5.8.2",
+    "vite": "^5.1.6"
+  },
+  "prettier": {
+    "useTabs": false,
+    "tabWidth": 2,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "semi": false,
+    "printWidth": 100,
+    "plugins": [
+      "prettier-plugin-svelte",
+      "prettier-plugin-organize-imports"
+    ],
+    "overrides": [
+      {
+        "files": "*.svelte",
+        "options": {
+          "parser": "svelte"
+        }
+      }
+    ]
+  }
+}

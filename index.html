@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>GAME TITLE</title>
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        touch-action: none;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f4f1de;
+        color: #3d405b;
+        height: 100vh;
+        width: 100vw;
+      }
+
+      .container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        color: #e07a5f;
+        margin-bottom: 1rem;
+      }
+
+      #status {
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 4px;
+        background-color: #f2cc8f;
+        width: 80%;
+        max-width: 400px;
+        transition: background-color 0.3s ease;
+      }
+
+      #app {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>GAME NAME</h1>
+      <h2>GAME DESCRIPTION</h2>
+      <div id="status">Loading game...</div>
+      <div id="app"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
