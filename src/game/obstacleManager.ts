@@ -6,6 +6,7 @@ export const createObstacleManager = (scene: THREE.Scene) => {
   const maxObstacles = 50
   const obstacleSpawnRange = 100
   const obstacleTypes = ['tree', 'rock', 'jumpRamp']
+  const jumpFrequency = 0.4 // Increased probability of jumps (40%)
 
   // Store active obstacles
   const obstacles: Obstacle[] = []
@@ -28,6 +29,13 @@ export const createObstacleManager = (scene: THREE.Scene) => {
     trunk.position.y = 1
     trunk.castShadow = true
 
+    // Add snow on top of trunk
+    const snowCapGeometry = new THREE.CylinderGeometry(0.22, 0.22, 0.1, 8)
+    const snowCapMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const snowCap = new THREE.Mesh(snowCapGeometry, snowCapMaterial)
+    snowCap.position.y = 2.02
+    snowCap.castShadow = true
+
     // Create tree top (pine style)
     const topGeometry = new THREE.ConeGeometry(1, 3, 8)
     const topMaterial = new THREE.MeshStandardMaterial({ color: 0x2d572c }) // Dark green
@@ -35,10 +43,19 @@ export const createObstacleManager = (scene: THREE.Scene) => {
     top.position.y = 2.5
     top.castShadow = true
 
+    // Create snow on tree branches
+    const snowTopGeometry = new THREE.ConeGeometry(0.6, 0.5, 8)
+    const snowTopMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const snowTop = new THREE.Mesh(snowTopGeometry, snowTopMaterial)
+    snowTop.position.y = 3.5
+    snowTop.castShadow = true
+
     // Create group for the tree
     const treeGroup = new THREE.Group()
     treeGroup.add(trunk)
+    treeGroup.add(snowCap)
     treeGroup.add(top)
+    treeGroup.add(snowTop)
     treeGroup.position.copy(position)
 
     // Add to scene
@@ -79,17 +96,30 @@ export const createObstacleManager = (scene: THREE.Scene) => {
       metalness: 0.2,
     })
 
+    // Create rock
     const rock = new THREE.Mesh(rockGeometry, rockMaterial)
-    rock.position.copy(position)
     rock.position.y = 0.4 // Half height above ground
     rock.castShadow = true
     rock.receiveShadow = true
 
+    // Create snow on top of rock
+    const snowCapGeometry = new THREE.SphereGeometry(0.7, 8, 4, 0, Math.PI * 2, 0, Math.PI / 4)
+    const snowCapMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const snowCap = new THREE.Mesh(snowCapGeometry, snowCapMaterial)
+    snowCap.position.y = 0.7
+    snowCap.castShadow = true
+
+    // Create group for the rock
+    const rockGroup = new THREE.Group()
+    rockGroup.add(rock)
+    rockGroup.add(snowCap)
+    rockGroup.position.copy(position)
+
     // Add to scene
-    scene.add(rock)
+    scene.add(rockGroup)
 
     return {
-      mesh: rock,
+      mesh: rockGroup,
       type: 'rock',
       position: { x: position.x, y: position.y, z: position.z },
       size: { width: 1.6, height: 0.8, depth: 1.6 },
@@ -99,27 +129,70 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
   // Create a jump ramp
   const createJumpRamp = (position: THREE.Vector3): Obstacle => {
-    // Create ramp geometry
-    const rampGeometry = new THREE.BoxGeometry(3, 1, 2)
-    const rampMaterial = new THREE.MeshStandardMaterial({ color: 0xeeeeee }) // White snow
-    const ramp = new THREE.Mesh(rampGeometry, rampMaterial)
+    // Create ramp group
+    const rampGroup = new THREE.Group()
 
-    // Rotate to make it a ramp
-    ramp.rotation.x = -Math.PI / 8
+    // Create main rounded jump ramp
+    const jumpGeometry = new THREE.CylinderGeometry(1.5, 1.5, 3, 16, 1, false, 0, Math.PI)
+    jumpGeometry.rotateX(Math.PI / 2)
+    jumpGeometry.rotateZ(Math.PI / 2)
 
-    ramp.position.copy(position)
-    ramp.position.y = 0.2
-    ramp.castShadow = true
-    ramp.receiveShadow = true
+    const jumpMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf0f0ff,
+      roughness: 0.7,
+      metalness: 0.1,
+    })
+
+    const jump = new THREE.Mesh(jumpGeometry, jumpMaterial)
+    jump.position.y = 0.75
+    jump.castShadow = true
+    jump.receiveShadow = true
+
+    // Add snow accumulation on top
+    const snowTopGeometry = new THREE.CylinderGeometry(1.6, 1.6, 3.2, 16, 1, false, 0, Math.PI)
+    snowTopGeometry.rotateX(Math.PI / 2)
+    snowTopGeometry.rotateZ(Math.PI / 2)
+
+    const snowTopMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.5,
+      metalness: 0,
+    })
+
+    const snowTop = new THREE.Mesh(snowTopGeometry, snowTopMaterial)
+    snowTop.position.y = 0.85
+    snowTop.position.z = 0.05
+    snowTop.scale.set(0.95, 0.9, 0.2)
+    snowTop.castShadow = true
+    snowTop.receiveShadow = true
+
+    // Add jump markings
+    const markerGeometry = new THREE.PlaneGeometry(2.5, 0.4)
+    const markerMaterial = new THREE.MeshBasicMaterial({
+      color: 0xff3333,
+      transparent: true,
+      opacity: 0.8,
+    })
+
+    const marker = new THREE.Mesh(markerGeometry, markerMaterial)
+    marker.rotation.x = -Math.PI / 2
+    marker.position.y = 1.51
+    marker.position.z = 0
+
+    // Assemble the jump
+    rampGroup.add(jump)
+    rampGroup.add(snowTop)
+    rampGroup.add(marker)
+    rampGroup.position.copy(position)
 
     // Add to scene
-    scene.add(ramp)
+    scene.add(rampGroup)
 
     return {
-      mesh: ramp,
+      mesh: rampGroup,
       type: 'jumpRamp',
       position: { x: position.x, y: position.y, z: position.z },
-      size: { width: 3, height: 0.5, depth: 2 },
+      size: { width: 3, height: 1.5, depth: 1.5 },
       isCollidable: false, // Jumps don't cause crashes, they're fun!
     }
   }
@@ -130,9 +203,17 @@ export const createObstacleManager = (scene: THREE.Scene) => {
     const x = (Math.random() - 0.5) * 16 // -8 to 8
     const z = -zPosition - Math.random() * 5 // Some randomness in depth
 
-    // Random obstacle type
-    const typeIndex = Math.floor(Math.random() * obstacleTypes.length)
-    const type = obstacleTypes[typeIndex]
+    // Random obstacle type with higher jump probability
+    let type: string
+    const rand = Math.random()
+
+    if (rand < jumpFrequency) {
+      type = 'jumpRamp'
+    } else if (rand < jumpFrequency + (1 - jumpFrequency) / 2) {
+      type = 'tree'
+    } else {
+      type = 'rock'
+    }
 
     let obstacle: Obstacle
 
@@ -166,6 +247,8 @@ export const createObstacleManager = (scene: THREE.Scene) => {
   // Update obstacles and check collisions
   const update = (speed: number, playerPosition: { x: number; y: number; z: number }) => {
     let collision = false
+    let jumpCollision = false
+    let collisionObstacleType = ''
 
     // Move all obstacles toward the player
     obstacles.forEach((obstacle) => {
@@ -177,6 +260,12 @@ export const createObstacleManager = (scene: THREE.Scene) => {
       // Check for collision only if obstacle is collidable
       if (obstacle.isCollidable && isColliding(playerPosition, obstacle)) {
         collision = true
+        collisionObstacleType = obstacle.type
+      }
+      // Check for jump collision
+      else if (obstacle.type === 'jumpRamp' && isColliding(playerPosition, obstacle)) {
+        jumpCollision = true
+        collisionObstacleType = obstacle.type
       }
     })
 
@@ -194,7 +283,11 @@ export const createObstacleManager = (scene: THREE.Scene) => {
       }
     }
 
-    return collision
+    return {
+      collision,
+      jumpCollision,
+      obstacleType: collisionObstacleType,
+    }
   }
 
   // Check if player is colliding with an obstacle
