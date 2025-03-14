@@ -85,6 +85,19 @@ At this point, it seems like it's starting to collapse. there are about 4KLOC. F
 - [x] 11:53 reindex code
 - [x] 11:55 please refactor the code for maximum context efficiency by consolidating duplication into helper functions, moving and hoisting functions into separate files when possible, and generally making the code base more scanable and chunkable
   - keep going, this is excellent
+  - you're doing great, keep going. are you ready for big files yet?
+  - [revert] 🤮 oops, something got lost in that last refactoring. nothing is animating, everything is frozen
+    - it's accelerating super fast again, and the snowfall is really slow
+    - [revert]
+- [x] 🤮 12:15 please refactor the code for maximum context efficiency by consolidating duplication into helper functions, moving and hoisting functions into separate files when possible, and generally making the code base more scanable and chunkable
+  - [revert] check for errors
+- [x] reindex
+- [x] 🤮 12:22am please refactor the code for maximum context efficiency by consolidating duplication into helper functions, moving and hoisting functions into separate files when possible, and generally making the code base more scanable and chunkable
+- [x] 12:40am let's try zeroing in on a refactor. please refactor @skiGame.ts for maximum context efficiency by consolidating duplication into helper functions, moving and hoisting functions into separate files when possible, and generally making the module more scanable and chunkable
+  - THREE.Material: parameter 'map' has value of undefined.
+  - jumps aren't wokring and obstacles don't take lives and skiier doesn't fall and basically i think it's not reacting to obstacles at all
+  - hot chocolate kills me now
+  - hot chocolate is fixed but now other obstacles don't work again
 
 ---
 

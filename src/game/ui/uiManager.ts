@@ -1,239 +1,374 @@
-import { createUIContainer, createUIElement, showTemporaryMessage } from '../utils/ui'
+import { Position } from '../types'
 
-// Create and manage the game UI
-export const createUIManager = () => {
+// Types
+interface SkierInterface {
+  getLives: () => number
+  gainExtraLife: () => boolean
+  getPosition: () => Position
+  createPointIndicator: (text: string, position: Position) => void
+}
+
+// UI manager factory
+export const createUIManager = (container: HTMLElement, skier: SkierInterface) => {
   // UI elements
-  let scoreContainer: HTMLElement | null = null
-  let scoreElement: HTMLElement | null = null
-  let flipElement: HTMLElement | null = null
-  let comboElement: HTMLElement | null = null
   let livesDisplay: HTMLElement | null = null
   let gameOverScreen: HTMLElement | null = null
-  let splashScreen: HTMLElement | null = null
+  let lifeMessageDisplay: HTMLElement | null = null
+  let lifeMessageTimeout: number | null = null
+  let extraLifeMessageDisplay: HTMLElement | null = null
 
-  // Initialize UI elements
+  // Create all UI elements
   const initialize = () => {
-    // Create score container and displays
-    scoreContainer = createUIContainer('score-container', 'top-right')
-
-    // Score label and display
-    const scoreLabel = createUIElement('score-label', 'div', scoreContainer)
-    scoreLabel.textContent = 'SCORE'
-    scoreLabel.style.fontSize = '14px'
-    scoreLabel.style.marginBottom = '5px'
-
-    scoreElement = createUIElement('score-display', 'div', scoreContainer)
-    scoreElement.textContent = '0'
-    scoreElement.style.fontSize = '24px'
-    scoreElement.style.fontWeight = 'bold'
-
-    // Flip tracker
-    const flipLabel = createUIElement('flip-label', 'div', scoreContainer)
-    flipLabel.textContent = 'TOTAL FLIPS'
-    flipLabel.style.fontSize = '14px'
-    flipLabel.style.marginTop = '10px'
-    flipLabel.style.marginBottom = '5px'
-
-    flipElement = createUIElement('flip-display', 'div', scoreContainer)
-    flipElement.textContent = '0'
-    flipElement.style.fontSize = '20px'
-
-    // Combo tracker
-    const comboLabel = createUIElement('combo-label', 'div', scoreContainer)
-    comboLabel.textContent = 'FLIP COMBO'
-    comboLabel.style.fontSize = '14px'
-    comboLabel.style.marginTop = '10px'
-    comboLabel.style.marginBottom = '5px'
-
-    comboElement = createUIElement('combo-display', 'div', scoreContainer)
-    comboElement.textContent = '0'
-    comboElement.style.fontSize = '20px'
-    comboElement.style.color = '#ffdd00'
-
-    // Lives display
     createLivesDisplay()
-
-    // Game over screen (initially hidden)
+    createLifeMessageDisplay()
     createGameOverScreen()
-
-    // Get existing splash screen from HTML
-    splashScreen = document.getElementById('splash-screen')
-
-    // Reset displays
-    updateScore(0)
-    updateFlips(0)
-    updateFlipCombo(0)
-    updateLives(3)
+    createExtraLifeMessageDisplay()
   }
 
   // Create lives display
   const createLivesDisplay = () => {
-    const livesContainer = createUIContainer('lives-container', 'top-left')
+    if (livesDisplay) return
 
-    const livesLabel = createUIElement('lives-label', 'div', livesContainer)
-    livesLabel.textContent = 'LIVES'
-    livesLabel.style.fontSize = '14px'
-    livesLabel.style.marginBottom = '5px'
-
-    livesDisplay = createUIElement('lives-display', 'div', livesContainer)
+    livesDisplay = document.createElement('div')
+    livesDisplay.id = 'lives-display'
+    livesDisplay.style.position = 'absolute'
+    livesDisplay.style.top = '20px'
+    livesDisplay.style.left = '20px'
+    livesDisplay.style.color = 'white'
     livesDisplay.style.fontSize = '24px'
-    livesDisplay.style.fontWeight = 'bold'
+    livesDisplay.style.fontFamily = 'Arial, sans-serif'
+    livesDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+    livesDisplay.style.padding = '10px 20px'
+    livesDisplay.style.borderRadius = '5px'
+    livesDisplay.style.textShadow = '1px 1px 2px #000'
+    container.appendChild(livesDisplay)
+  }
+
+  // Create life lost message
+  const createLifeMessageDisplay = () => {
+    if (lifeMessageDisplay) return
+
+    lifeMessageDisplay = document.createElement('div')
+    lifeMessageDisplay.id = 'life-message'
+    lifeMessageDisplay.style.position = 'absolute'
+    lifeMessageDisplay.style.bottom = '20%'
+    lifeMessageDisplay.style.left = '50%'
+    lifeMessageDisplay.style.transform = 'translate(-50%, 0)'
+    lifeMessageDisplay.style.color = 'red'
+    lifeMessageDisplay.style.fontSize = '36px'
+    lifeMessageDisplay.style.fontFamily = 'Arial, sans-serif'
+    lifeMessageDisplay.style.fontWeight = 'bold'
+    lifeMessageDisplay.style.textShadow = '2px 2px 4px #000'
+    lifeMessageDisplay.style.display = 'none'
+    lifeMessageDisplay.style.padding = '15px 30px'
+    lifeMessageDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+    lifeMessageDisplay.style.borderRadius = '10px'
+    lifeMessageDisplay.style.zIndex = '200'
+    container.appendChild(lifeMessageDisplay)
   }
 
   // Create game over screen
   const createGameOverScreen = () => {
-    gameOverScreen = createUIContainer('game-over-screen', 'center')
-    gameOverScreen.style.width = '60%'
-    gameOverScreen.style.maxWidth = '500px'
-    gameOverScreen.style.textAlign = 'center'
-    gameOverScreen.style.padding = '30px'
-    gameOverScreen.style.display = 'none' // Initially hidden
+    if (gameOverScreen) return
 
-    const gameOverTitle = createUIElement('game-over-title', 'div', gameOverScreen)
+    gameOverScreen = document.createElement('div')
+    gameOverScreen.id = 'game-over-screen'
+    gameOverScreen.style.position = 'absolute'
+    gameOverScreen.style.top = '0'
+    gameOverScreen.style.left = '0'
+    gameOverScreen.style.width = '100%'
+    gameOverScreen.style.height = '100%'
+    gameOverScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'
+    gameOverScreen.style.color = 'white'
+    gameOverScreen.style.display = 'flex'
+    gameOverScreen.style.flexDirection = 'column'
+    gameOverScreen.style.alignItems = 'center'
+    gameOverScreen.style.justifyContent = 'center'
+    gameOverScreen.style.fontSize = '32px'
+    gameOverScreen.style.fontFamily = 'Arial, sans-serif'
+    gameOverScreen.style.display = 'none'
+
+    const gameOverTitle = document.createElement('h1')
     gameOverTitle.textContent = 'GAME OVER'
-    gameOverTitle.style.fontSize = '36px'
-    gameOverTitle.style.fontWeight = 'bold'
     gameOverTitle.style.marginBottom = '20px'
 
-    const finalScoreLabel = createUIElement('final-score-label', 'div', gameOverScreen)
-    finalScoreLabel.textContent = 'Final Score:'
-    finalScoreLabel.style.fontSize = '24px'
-    finalScoreLabel.style.marginBottom = '5px'
+    const scoreDisplay = document.createElement('div')
+    scoreDisplay.id = 'final-score'
+    scoreDisplay.style.marginBottom = '40px'
 
-    const finalScore = createUIElement('final-score', 'div', gameOverScreen)
-    finalScore.textContent = '0'
-    finalScore.style.fontSize = '36px'
-    finalScore.style.fontWeight = 'bold'
-    finalScore.style.marginBottom = '30px'
+    // Add instructions to game over screen
+    const instructionsDiv = document.createElement('div')
+    instructionsDiv.className = 'controls-info'
+    instructionsDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+    instructionsDiv.style.padding = '20px'
+    instructionsDiv.style.borderRadius = '10px'
+    instructionsDiv.style.marginBottom = '30px'
+    instructionsDiv.style.maxWidth = '400px'
+    instructionsDiv.style.textAlign = 'left'
+    instructionsDiv.style.fontSize = '18px'
 
-    const restartButton = createUIElement('restart-button', 'button', gameOverScreen)
-    restartButton.textContent = 'PLAY AGAIN'
-    restartButton.style.fontSize = '24px'
-    restartButton.style.padding = '10px 30px'
+    instructionsDiv.innerHTML = `
+      <h3>Controls:</h3>
+      <ul>
+        <li>Arrow Keys or WASD: Move the skier</li>
+        <li>Mobile: Tilt device or touch screen</li>
+        <li>Avoid trees and rocks</li>
+        <li>Use ramps for big air!</li>
+        <li>Collect hot chocolate for extra lives</li>
+      </ul>
+    `
+
+    // Add performance settings
+    const performanceDiv = document.createElement('div')
+    performanceDiv.className = 'performance-settings'
+    performanceDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+    performanceDiv.style.padding = '15px'
+    performanceDiv.style.borderRadius = '10px'
+    performanceDiv.style.marginBottom = '20px'
+    performanceDiv.style.maxWidth = '400px'
+    performanceDiv.style.textAlign = 'center'
+    performanceDiv.style.fontSize = '16px'
+
+    performanceDiv.innerHTML = `
+      <h3>Performance Settings:</h3>
+      <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+        <button id="performance-low" style="padding: 8px 12px; background-color: #777; border: none; color: white; border-radius: 4px;">Low</button>
+        <button id="performance-medium" style="padding: 8px 12px; background-color: #777; border: none; color: white; border-radius: 4px;">Medium</button>
+        <button id="performance-high" style="padding: 8px 12px; background-color: #777; border: none; color: white; border-radius: 4px;">High</button>
+        <button id="performance-auto" style="padding: 8px 12px; background-color: #4CAF50; border: none; color: white; border-radius: 4px;">Auto</button>
+      </div>
+    `
+
+    const restartButton = document.createElement('button')
+    restartButton.id = 'restart-button'
+    restartButton.textContent = 'Restart Game'
+    restartButton.style.padding = '15px 30px'
+    restartButton.style.fontSize = '20px'
     restartButton.style.backgroundColor = '#4CAF50'
     restartButton.style.border = 'none'
     restartButton.style.borderRadius = '5px'
     restartButton.style.cursor = 'pointer'
 
-    const bannerLink = createUIElement('banner-link', 'div', gameOverScreen)
-    bannerLink.innerHTML =
-      'Buy a Banner: <a href="mailto:gnar@benallfree.com" style="color: #4CAF50;">gnar@benallfree.com</a>'
-    bannerLink.style.marginTop = '20px'
-    bannerLink.style.fontSize = '14px'
+    gameOverScreen.appendChild(gameOverTitle)
+    gameOverScreen.appendChild(scoreDisplay)
+    gameOverScreen.appendChild(instructionsDiv)
+    gameOverScreen.appendChild(performanceDiv)
+    gameOverScreen.appendChild(restartButton)
+
+    container.appendChild(gameOverScreen)
   }
 
-  // Update score display
-  const updateScore = (score: number) => {
-    if (scoreElement) {
-      scoreElement.textContent = score.toString()
-    }
+  // Create extra life message
+  const createExtraLifeMessageDisplay = () => {
+    if (extraLifeMessageDisplay) return
 
-    // Also update final score in game over screen
-    const finalScore = document.getElementById('final-score')
-    if (finalScore) {
-      finalScore.textContent = score.toString()
-    }
+    extraLifeMessageDisplay = document.createElement('div')
+    extraLifeMessageDisplay.id = 'extra-life-message'
+    extraLifeMessageDisplay.style.position = 'absolute'
+    extraLifeMessageDisplay.style.bottom = '25%'
+    extraLifeMessageDisplay.style.left = '50%'
+    extraLifeMessageDisplay.style.transform = 'translate(-50%, 0)'
+    extraLifeMessageDisplay.style.color = '#2fc82f'
+    extraLifeMessageDisplay.style.fontSize = '36px'
+    extraLifeMessageDisplay.style.fontFamily = 'Arial, sans-serif'
+    extraLifeMessageDisplay.style.fontWeight = 'bold'
+    extraLifeMessageDisplay.style.textShadow = '2px 2px 4px #000'
+    extraLifeMessageDisplay.style.display = 'none'
+    extraLifeMessageDisplay.style.padding = '15px 30px'
+    extraLifeMessageDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+    extraLifeMessageDisplay.style.borderRadius = '10px'
+    extraLifeMessageDisplay.style.zIndex = '200'
+    extraLifeMessageDisplay.textContent = '☕ HOT CHOCOLATE! +1 LIFE ☕'
+    container.appendChild(extraLifeMessageDisplay)
   }
 
   // Update lives display
-  const updateLives = (lives: number) => {
-    if (livesDisplay) {
-      // Create heart symbols
-      livesDisplay.textContent = '❤️'.repeat(lives)
-    }
-  }
+  const updateLivesDisplay = (score: number, isDemoMode: boolean) => {
+    if (!livesDisplay) return
 
-  // Update total flips display
-  const updateFlips = (flips: number) => {
-    if (flipElement) {
-      flipElement.textContent = flips.toString()
-    }
-  }
-
-  // Update current flip combo display
-  const updateFlipCombo = (combo: number) => {
-    if (!comboElement) return
-
-    comboElement.textContent = combo.toString()
-
-    // Change color based on combo count
-    if (combo === 0) {
-      comboElement.style.color = '#ffffff'
-    } else if (combo === 1) {
-      comboElement.style.color = '#ffdd00' // Gold for 1 flip
-    } else if (combo === 2) {
-      comboElement.style.color = '#00ffff' // Cyan for 2 flips
-    } else {
-      comboElement.style.color = '#ff00ff' // Purple for 3+ flips - impressive!
+    if (isDemoMode) {
+      livesDisplay.style.display = 'none'
+      return
     }
 
-    // Animate size on new combo
-    comboElement.style.fontSize = '28px'
-    setTimeout(() => {
-      if (comboElement) {
-        comboElement.style.fontSize = '20px'
-        comboElement.style.transition = 'font-size 0.3s ease-out'
-      }
-    }, 50)
+    livesDisplay.style.display = 'block'
+    livesDisplay.innerHTML = `Lives: ${skier.getLives()} | Score: ${Math.floor(score)}`
   }
 
   // Show life lost message
   const showLifeLostMessage = () => {
-    showTemporaryMessage('Life Lost! ❤️', 2000, 'behind-player')
-  }
+    if (!lifeMessageDisplay) return
 
-  // Show extra life message
-  const showExtraLifeMessage = () => {
-    showTemporaryMessage('Extra Life! ❤️', 2000, 'behind-player')
+    const remainingLives = skier.getLives()
+
+    // Clear any existing timeout
+    if (lifeMessageTimeout !== null) {
+      window.clearTimeout(lifeMessageTimeout)
+    }
+
+    if (remainingLives > 0) {
+      lifeMessageDisplay.textContent = `Ouch! ${remainingLives} ${remainingLives === 1 ? 'life' : 'lives'} remaining`
+    } else {
+      lifeMessageDisplay.textContent = 'Last life lost!'
+    }
+
+    lifeMessageDisplay.style.display = 'block'
+
+    // Hide message after 2 seconds
+    lifeMessageTimeout = window.setTimeout(() => {
+      if (lifeMessageDisplay) {
+        lifeMessageDisplay.style.display = 'none'
+      }
+      lifeMessageTimeout = null
+    }, 2000)
   }
 
   // Show game over screen
-  const showGameOverScreen = (finalScore: number) => {
+  const showGameOverScreen = (score: number) => {
     if (!gameOverScreen) return
 
-    // Update final score
-    const finalScoreElement = document.getElementById('final-score')
+    gameOverScreen.style.display = 'flex'
+    const finalScoreElement = gameOverScreen.querySelector('#final-score')
     if (finalScoreElement) {
-      finalScoreElement.textContent = finalScore.toString()
+      finalScoreElement.textContent = `Final Score: ${Math.floor(score)}`
     }
-
-    // Show game over screen
-    gameOverScreen.style.display = 'block'
   }
 
   // Hide game over screen
   const hideGameOverScreen = () => {
-    if (gameOverScreen) {
-      gameOverScreen.style.display = 'none'
+    if (!gameOverScreen) return
+
+    gameOverScreen.style.display = 'none'
+  }
+
+  // Show extra life message
+  const showExtraLifeMessage = () => {
+    if (!extraLifeMessageDisplay) return
+
+    extraLifeMessageDisplay.style.display = 'block'
+
+    // Hide after 2 seconds
+    window.setTimeout(() => {
+      if (extraLifeMessageDisplay) {
+        extraLifeMessageDisplay.style.display = 'none'
+      }
+    }, 2000)
+  }
+
+  // Handle hot chocolate pickup UI effects
+  const handleHotChocolatePickup = () => {
+    const currentLives = skier.getLives()
+
+    // Update message to show current lives
+    if (extraLifeMessageDisplay) {
+      extraLifeMessageDisplay.textContent = `☕ HOT CHOCOLATE! LIVES: ${currentLives} ☕`
+    }
+
+    // Show message
+    showExtraLifeMessage()
+
+    // Create floating point indicator
+    skier.createPointIndicator('☕ +1 LIFE', skier.getPosition())
+  }
+
+  // Clean up any timeouts
+  const cleanup = () => {
+    if (lifeMessageTimeout !== null) {
+      window.clearTimeout(lifeMessageTimeout)
+      lifeMessageTimeout = null
+    }
+
+    if (lifeMessageDisplay) {
+      lifeMessageDisplay.style.display = 'none'
+    }
+
+    if (extraLifeMessageDisplay) {
+      extraLifeMessageDisplay.style.display = 'none'
     }
   }
 
-  // Show splash screen
-  const showSplashScreen = () => {
-    if (splashScreen) {
-      splashScreen.style.display = 'flex'
+  // Add event listener to restart button
+  const onRestartClick = (callback: () => void) => {
+    const restartButton = document.getElementById('restart-button')
+    if (restartButton) {
+      restartButton.onclick = () => {
+        hideGameOverScreen()
+        callback()
+      }
     }
   }
 
-  // Hide splash screen
-  const hideSplashScreen = () => {
-    if (splashScreen) {
-      splashScreen.style.display = 'none'
+  // Set up performance button event listeners
+  const setupPerformanceButtons = (callbacks: {
+    onLow: () => void
+    onMedium: () => void
+    onHigh: () => void
+    onAuto: () => void
+  }) => {
+    setTimeout(() => {
+      const lowBtn = document.getElementById('performance-low')
+      const mediumBtn = document.getElementById('performance-medium')
+      const highBtn = document.getElementById('performance-high')
+      const autoBtn = document.getElementById('performance-auto')
+
+      if (lowBtn) {
+        lowBtn.addEventListener('click', callbacks.onLow)
+      }
+
+      if (mediumBtn) {
+        mediumBtn.addEventListener('click', callbacks.onMedium)
+      }
+
+      if (highBtn) {
+        highBtn.addEventListener('click', callbacks.onHigh)
+      }
+
+      if (autoBtn) {
+        autoBtn.addEventListener('click', callbacks.onAuto)
+      }
+    }, 0)
+  }
+
+  // Update performance buttons to highlight the selected option
+  const updatePerformanceButtons = (performanceMode: string) => {
+    const btns = {
+      low: document.getElementById('performance-low'),
+      medium: document.getElementById('performance-medium'),
+      high: document.getElementById('performance-high'),
+      auto: document.getElementById('performance-auto'),
+    }
+
+    // Reset all buttons
+    Object.values(btns).forEach((btn) => {
+      if (btn) btn.style.backgroundColor = '#777'
+    })
+
+    // Highlight the selected button
+    const selectedBtn = btns[performanceMode as keyof typeof btns]
+    if (selectedBtn) {
+      selectedBtn.style.backgroundColor = '#4CAF50'
     }
   }
 
-  // Return public API
+  // Toggle UI visibility for demo mode
+  const setDemoMode = (isDemoMode: boolean) => {
+    if (livesDisplay) {
+      livesDisplay.style.display = isDemoMode ? 'none' : 'block'
+    }
+  }
+
   return {
     initialize,
-    updateScore,
-    updateLives,
-    updateFlips,
-    updateFlipCombo,
+    updateLivesDisplay,
     showLifeLostMessage,
-    showExtraLifeMessage,
     showGameOverScreen,
     hideGameOverScreen,
-    showSplashScreen,
-    hideSplashScreen,
+    showExtraLifeMessage,
+    handleHotChocolatePickup,
+    cleanup,
+    onRestartClick,
+    setupPerformanceButtons,
+    updatePerformanceButtons,
+    setDemoMode,
   }
 }

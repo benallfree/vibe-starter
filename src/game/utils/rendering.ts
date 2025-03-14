@@ -29,14 +29,19 @@ export const createParticleMaterial = (
   size: number = 0.5,
   texture?: THREE.Texture
 ): THREE.PointsMaterial => {
-  return new THREE.PointsMaterial({
+  const options: THREE.PointsMaterialParameters = {
     color,
     size,
-    map: texture,
     transparent: true,
     opacity: 0.8,
     depthWrite: false,
-  })
+  }
+
+  if (texture) {
+    options.map = texture
+  }
+
+  return new THREE.PointsMaterial(options)
 }
 
 // Create a standard material with common properties
@@ -46,11 +51,16 @@ export const createSnowMaterial = (
   metalness: number = 0.1,
   map?: THREE.Texture
 ): THREE.MeshStandardMaterial => {
-  return new THREE.MeshStandardMaterial({
+  const options: THREE.MeshStandardMaterialParameters = {
     color,
     roughness,
     metalness,
     flatShading: false,
-    map,
-  })
+  }
+
+  if (map) {
+    options.map = map
+  }
+
+  return new THREE.MeshStandardMaterial(options)
 }
