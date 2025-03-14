@@ -5,6 +5,7 @@
 
 app = 'gnar'
 primary_region = 'sjc'
+max_machines_count = 1
 
 [build]
 

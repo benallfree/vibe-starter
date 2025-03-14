@@ -31,7 +31,7 @@ export const createSkier = (scene: THREE.Scene) => {
   // Skier state
   let isTumbling = false
   let tumblingTimer = 0
-  const tumblingDuration = 1.0 // in seconds (was 60 frames at 60fps)
+  const tumblingDuration = 0.5 // in seconds (reduced from 1.0 to make the skier get up faster)
   let lives = 3
 
   // Jump and flip state
@@ -256,8 +256,8 @@ export const createSkier = (scene: THREE.Scene) => {
       tumblingTimer = 0
 
       // Set random rotation directions for tumbling
-      tumblingRotationX = Math.random() > 0.5 ? 0.2 : -0.2
-      tumblingRotationZ = Math.random() > 0.5 ? 0.2 : -0.2
+      tumblingRotationX = Math.random() > 0.5 ? 0.4 : -0.4 // Increased from 0.2 to 0.4 for faster tumbling
+      tumblingRotationZ = Math.random() > 0.5 ? 0.4 : -0.4 // Increased from 0.2 to 0.4 for faster tumbling
 
       // Decrease lives
       lives--
@@ -310,8 +310,8 @@ export const createSkier = (scene: THREE.Scene) => {
 
     // Apply tumbling rotation - use radians per second
     if (skierMesh) {
-      // Convert to proper radians per second (was 0.2 radians per frame at 60fps)
-      const rotationSpeed = 0.2 * 60
+      // Convert to proper radians per second (increased from 0.2 to 0.4 radians per frame at 60fps)
+      const rotationSpeed = 0.4 * 60
       skierMesh.rotation.x += tumblingRotationX * rotationSpeed * deltaTime
       skierMesh.rotation.z += tumblingRotationZ * rotationSpeed * deltaTime
     }

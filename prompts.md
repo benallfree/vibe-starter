@@ -30,10 +30,16 @@ Each top-level bullet is a fresh chat session. Cursor 0.46.11, Claude Sonnet 3.7
   - [reject] no, that didn't work. it's still extremely slow on mobile
 - [x] 7:23pm the splash page currently doesn't fit on mobile
 - [x] 7:30pm it needs to begin with things moving a little faster. the beginning is too slow
-- [ ] on mobile, the skiier should only move during active swiping. a swipe and hold in place should not continue moving the skiier.
+  - he needs to fall over faster, slide fora while, and then get up faster
+  - [reject] no, lots of regressions in there. try again. i just want the skiier to fall down faster and stand up faster, please don't get fancy
+- [ ] 7:41pm make big banners that the skiier goes under with advertisements on them. they appear periodically, not more than 1 every 10 seconds. make a ts file of ads and a folder in static named ads. i'll fill it. for now, ads is just an array of objects and each object has a src attribute. add a little `advertise with us` link in the splash and game over pages.
+  - continue without creating images. i already added pockethost.webp, use that one
+  - please check the code for errors
+  - (pasted vite code message)
+  - [revert all] i want the skiier to pas under big banners as they ski down the hill. they appear periodically, not more than 1 every 10 seconds. make a ts file of banners. public/banners contains the banner images to use. for now, a banner is just an an object with a src attribute. add a little `Buy a Banner` (gnar@benallfree.com) link in the splash and game over pages.
+- [ ] on mobile, there is a touch 'dead zone' that is no good. the skiier should only move during active swiping, not just holding. and it should move instantly but should strafe only at the speed allowed. a swipe and hold in place should not continue moving the skiier.
 - [ ] the bonus points for jumps aren't working as expected. it looks like the player only makes 2 flips regardless of how long he is airborn. i want the flips to be a constant speed so he can get more flips for more hang time
 - [ ] in demo mode, it shouldn't display any messages it should just ski
-- [ ] make big banners that the skiier goes under with advertisements on them. they appear periodically, not more than 1 every 10 seconds.
 - [ ] make "bonus runs" that are just glorious runs of jumps and no obstacles. and even more rarely, make gloriously long runs of just collecting hot chocolate without a worry in the world
 - [ ] pressing the forward arrow makes him french fry and squat down and accelerate
 - [ ] pressing the back arrow makes him pizza and slow down
