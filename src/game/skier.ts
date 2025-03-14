@@ -37,9 +37,21 @@ export const createSkier = (scene: THREE.Scene) => {
   // Jump and flip state
   let isJumping = false
   let jumpTimer = 0
-  const jumpDuration = 40 // frames
+  let jumpDuration = 40 // frames - now variable based on speed
   let jumpHeight = 0
   let doingFlip = false
+  let flipCount = 0
+  let currentGameSpeed = 0.1 // Track current game speed
+  let lastFlipRotation = 0 // Track rotation for multiple flips
+
+  // Floating point indicators
+  const maxPointIndicators = 10
+  const pointIndicators: Array<{
+    mesh: THREE.Object3D
+    life: number
+    maxLife: number
+    yVelocity: number
+  }> = []
 
   // Tumbling animation properties
   let tumblingRotationX = 0
@@ -252,11 +264,22 @@ export const createSkier = (scene: THREE.Scene) => {
   }
 
   // Start jump with flip
-  const startJump = () => {
+  const startJump = (speed: number = 0.1) => {
     if (!isTumbling && !isJumping) {
       isJumping = true
       jumpTimer = 0
       doingFlip = true
+      flipCount = 0
+      lastFlipRotation = 0
+      currentGameSpeed = speed
+
+      // Calculate jump duration and height based on speed
+      // As speed increases, allow for longer jumps with more air time
+      jumpDuration = 40 + speed * 100
+
+      // Create +10 point indicator for jumping
+      createPointIndicator(10, { ...position })
+
       return true
     }
     return false
@@ -293,17 +316,33 @@ export const createSkier = (scene: THREE.Scene) => {
 
     jumpTimer++
 
-    // Calculate jump height - parabolic arc
+    // Calculate jump height - parabolic arc with height based on speed
     const jumpProgress = jumpTimer / jumpDuration
-    jumpHeight = 3 * Math.sin(jumpProgress * Math.PI) // Max height of 3 units
+    jumpHeight = (3 + currentGameSpeed * 10) * Math.sin(jumpProgress * Math.PI) // Max height increases with speed
 
     // Apply jump height to skier position
     position.y = jumpHeight
 
-    // Apply flip rotation (one full 360 flip)
+    // Apply flip rotation with multiple flips possible
     if (doingFlip && skierMesh) {
-      // Rotate around X axis (forward flip)
-      skierMesh.rotation.x = jumpProgress * Math.PI * 2
+      // Calculate rotation speed - faster at higher speeds
+      const flipSpeed = Math.PI * 2 * (1 + currentGameSpeed)
+
+      // Calculate new rotation
+      const newRotation = lastFlipRotation + flipSpeed / jumpDuration
+
+      // Apply rotation
+      skierMesh.rotation.x = newRotation
+
+      // Track last rotation value
+      lastFlipRotation = newRotation
+
+      // Check if we completed a new flip
+      if (Math.floor(newRotation / (Math.PI * 2)) > flipCount) {
+        flipCount++
+        // Create +50 point indicator for each flip
+        createPointIndicator(50, { ...position, y: position.y + 1 })
+      }
     }
 
     // End jump when timer expires
@@ -312,9 +351,88 @@ export const createSkier = (scene: THREE.Scene) => {
       doingFlip = false
       position.y = 0
 
+      // Create final bonus indicator if we did flips
+      if (flipCount > 0) {
+        createPointIndicator(flipCount * 50, { ...position, y: position.y + 2 })
+      }
+
       // Reset rotation
       if (skierMesh) {
         skierMesh.rotation.set(0, 0, 0)
+      }
+    }
+  }
+
+  // Create floating point indicator
+  const createPointIndicator = (points: number, position: { x: number; y: number; z: number }) => {
+    // Create text geometry with the points value
+    const fontSize = points >= 50 ? 0.5 : 0.3
+    const pointsText = points >= 0 ? `+${points}` : `${points}`
+
+    // Create canvas for text
+    const canvas = document.createElement('canvas')
+    canvas.width = 256
+    canvas.height = 256
+    const context = canvas.getContext('2d')
+
+    if (context) {
+      context.fillStyle = points >= 50 ? '#ffdd00' : '#ffffff'
+      context.font = 'bold 120px Arial'
+      context.textAlign = 'center'
+      context.textBaseline = 'middle'
+      context.fillText(pointsText, 128, 128)
+    }
+
+    const texture = new THREE.Texture(canvas)
+    texture.needsUpdate = true
+
+    // Create sprite material
+    const material = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      opacity: 1.0,
+    })
+
+    // Create sprite
+    const sprite = new THREE.Sprite(material)
+    sprite.position.set(position.x, position.y + 2, position.z)
+    sprite.scale.set(fontSize * 3, fontSize * 3, 1)
+
+    // Add to scene
+    scene.add(sprite)
+
+    // Add to indicators array
+    pointIndicators.push({
+      mesh: sprite,
+      life: 0,
+      maxLife: 60,
+      yVelocity: 0.05,
+    })
+  }
+
+  // Update point indicators
+  const updatePointIndicators = () => {
+    for (let i = pointIndicators.length - 1; i >= 0; i--) {
+      const indicator = pointIndicators[i]
+
+      // Update life
+      indicator.life++
+
+      // Move upward
+      indicator.mesh.position.y += indicator.yVelocity
+
+      // Fade out
+      if (indicator.mesh instanceof THREE.Sprite) {
+        const sprite = indicator.mesh as THREE.Sprite
+        if (sprite.material instanceof THREE.SpriteMaterial) {
+          sprite.material.opacity = 1 - indicator.life / indicator.maxLife
+        }
+      }
+
+      // Remove when expired
+      if (indicator.life >= indicator.maxLife) {
+        scene.remove(indicator.mesh)
+        pointIndicators.splice(i, 1)
       }
     }
   }
@@ -333,22 +451,31 @@ export const createSkier = (scene: THREE.Scene) => {
   }
 
   // Update skier position and animation
-  const update = (input: { left: boolean; right: boolean; up: boolean; down: boolean }) => {
+  const update = (
+    input: { left: boolean; right: boolean; up: boolean; down: boolean },
+    speed: number = 0.1
+  ) => {
+    // Update current game speed
+    currentGameSpeed = speed
+
     // Update tumbling state
     updateTumbling()
 
     // Update jump state
     updateJump()
 
+    // Update point indicators
+    updatePointIndicators()
+
     // Don't respond to controls while tumbling
     if (isTumbling) return
 
     // Move left/right (allow while jumping)
     if (input.left) {
-      position.x -= movementSpeed
+      position.x -= movementSpeed * (1 + currentGameSpeed) // Speed affects horizontal movement too
     }
     if (input.right) {
-      position.x += movementSpeed
+      position.x += movementSpeed * (1 + currentGameSpeed) // Speed affects horizontal movement too
     }
 
     // Clamp horizontal position to prevent going too far off the slope
@@ -374,9 +501,9 @@ export const createSkier = (scene: THREE.Scene) => {
   }
 
   // Check for collision with jump
-  const checkJumpCollision = (obstacleType: string) => {
+  const checkJumpCollision = (obstacleType: string, speed: number = 0.1) => {
     if (obstacleType === 'jumpRamp' && !isJumping && !isTumbling) {
-      startJump()
+      startJump(speed)
       return true
     }
     return false
@@ -427,6 +554,11 @@ export const createSkier = (scene: THREE.Scene) => {
     return isJumping
   }
 
+  // Get current flip count
+  const getFlipCount = () => {
+    return flipCount
+  }
+
   // Return public API
   return {
     initialize,
@@ -434,11 +566,13 @@ export const createSkier = (scene: THREE.Scene) => {
     reset,
     resetLives,
     startTumbling,
+    startJump,
     checkJumpCollision,
     getPosition,
     getSize,
     getLives,
     getIsTumbling,
     getIsJumping,
+    getFlipCount,
   }
 }

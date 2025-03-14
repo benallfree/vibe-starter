@@ -183,6 +183,10 @@ export const createObstacleManager = (scene: THREE.Scene) => {
     rampGroup.add(jump)
     rampGroup.add(snowTop)
     rampGroup.add(marker)
+
+    // Rotate the entire ramp group 90 degrees around Y-axis (yaw)
+    rampGroup.rotation.y = Math.PI / 2
+
     rampGroup.position.copy(position)
 
     // Add to scene

@@ -324,7 +324,22 @@ export const createSkiGame = (container: HTMLElement) => {
     }
 
     // Update skier with controls input
-    skier.update(controls.getInputs())
+    skier.update(controls.getInputs(), speed)
+
+    // Check if skier landed from a jump and update flip count in score manager
+    if (!skier.getIsJumping() && scoreManager.getLastJumpFlips() !== skier.getFlipCount()) {
+      // Get flip count from skier
+      const flipCount = skier.getFlipCount()
+
+      // Only update if there were flips performed
+      if (flipCount > 0) {
+        // Add flips to score manager
+        scoreManager.addFlips(flipCount)
+
+        // Add points for flips (50 per flip)
+        score += flipCount * 50
+      }
+    }
 
     // Update terrain
     terrainGenerator.update(speed)
@@ -342,10 +357,10 @@ export const createSkiGame = (container: HTMLElement) => {
     // Check if player hit a jump
     else if (collisionResult.jumpCollision) {
       // Trigger jump and flip
-      skier.checkJumpCollision(collisionResult.obstacleType)
+      skier.checkJumpCollision(collisionResult.obstacleType, speed)
 
-      // Add points for jumps
-      score += 50
+      // Base points for jumps already handled in skier.ts with floating indicators
+      score += 10 // Base jump bonus
     }
 
     // Gradually increase speed
