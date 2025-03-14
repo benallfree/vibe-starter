@@ -100,13 +100,13 @@ This starter kit comes preconfigured for Fly.io deployment, making it easy to qu
 
 ### Deployment
 
-1. Build your application for production:
+1. Create your app on Fly.io:
 
    ```bash
-   bun run build:production
+   fly launch
    ```
 
-2. Deploy to Fly.io:
+1. Deploy to Fly.io:
    ```bash
    fly deploy
    ```
@@ -127,9 +127,6 @@ fly status
 
 # View application logs
 fly logs
-
-# Scale your application
-fly scale count 2  # Scale to 2 instances
 
 # Open your deployed application in a browser
 fly open

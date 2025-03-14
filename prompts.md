@@ -1,0 +1,4 @@
+- i want to make a 3d web game where someone skis down an endless hill. does the term "gnar gnar" refer only to snowboarding?
+- make it go slower at first
+  - when the game resets after crashing, it suddenly goes faster and the arrow keys no longer work
+- when the player hits an obstacle, make him tumble down the hill and get back on his feet. he has 3 lives. after three lives, present a 'game over' screen that goes back to the beginning

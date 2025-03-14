@@ -9,7 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>GAME TITLE</title>
+    <title>GNAR GNAR - Endless Skiing</title>
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
@@ -63,15 +63,49 @@
         height: 100%;
         z-index: 10;
       }
+
+      .controls-info {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        max-width: 300px;
+        z-index: 100;
+      }
+
+      .controls-info h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+
+      .controls-info ul {
+        margin: 0;
+        padding-left: 20px;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>GAME NAME</h1>
-      <h2>GAME DESCRIPTION</h2>
+      <h1>GNAR GNAR</h1>
+      <h2>Ski down an endless mountain and rack up points!</h2>
       <div id="status">Loading game...</div>
       <div id="app"></div>
     </div>
+
+    <div class="controls-info">
+      <h3>Controls:</h3>
+      <ul>
+        <li>Arrow Keys or WASD: Move the skier</li>
+        <li>Mobile: Tilt device or touch screen</li>
+        <li>Avoid trees and rocks</li>
+        <li>Use ramps for big air!</li>
+      </ul>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
