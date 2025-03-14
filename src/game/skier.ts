@@ -374,23 +374,34 @@ export const createSkier = (scene: THREE.Scene) => {
   }
 
   // Create floating point indicator
-  const createPointIndicator = (points: number, position: { x: number; y: number; z: number }) => {
+  const createPointIndicator = (
+    points: number | string,
+    position: { x: number; y: number; z: number }
+  ) => {
     // Create text geometry with the points value
-    const fontSize = points >= 50 ? 0.5 : 0.3
-    const pointsText = points >= 0 ? `+${points}` : `${points}`
+    const fontSize = typeof points === 'number' && points >= 50 ? 0.5 : 0.3
+    const pointsText =
+      typeof points === 'number' ? (points >= 0 ? `+${points}` : `${points}`) : points
+
+    // Use a wider canvas for text messages
+    const isTextMessage = typeof points === 'string' && points.length > 2
+    const canvasWidth = isTextMessage ? 512 : 256
+    const canvasHeight = 256
 
     // Create canvas for text
     const canvas = document.createElement('canvas')
-    canvas.width = 256
-    canvas.height = 256
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
     const context = canvas.getContext('2d')
 
     if (context) {
-      context.fillStyle = points >= 50 ? '#ffdd00' : '#ffffff'
-      context.font = 'bold 120px Arial'
+      context.fillStyle = typeof points === 'number' && points >= 50 ? '#ffdd00' : '#ffffff'
+      // Use smaller font for longer text messages
+      const fontSizeText = isTextMessage ? '80px' : '120px'
+      context.font = `bold ${fontSizeText} Arial`
       context.textAlign = 'center'
       context.textBaseline = 'middle'
-      context.fillText(pointsText, 128, 128)
+      context.fillText(pointsText, canvasWidth / 2, canvasHeight / 2)
     }
 
     const texture = new THREE.Texture(canvas)
@@ -406,7 +417,13 @@ export const createSkier = (scene: THREE.Scene) => {
     // Create sprite
     const sprite = new THREE.Sprite(material)
     sprite.position.set(position.x, position.y + 2, position.z)
-    sprite.scale.set(fontSize * 3, fontSize * 3, 1)
+
+    // Adjust scale for text messages to be wider
+    if (isTextMessage) {
+      sprite.scale.set(fontSize * 10, fontSize * 3, 1)
+    } else {
+      sprite.scale.set(fontSize * 3, fontSize * 3, 1)
+    }
 
     // Add to scene
     scene.add(sprite)
@@ -512,8 +529,34 @@ export const createSkier = (scene: THREE.Scene) => {
 
   // Check for collision with jump
   const checkJumpCollision = (obstacleType: string, speed: number = 0.1) => {
-    if (obstacleType === 'jumpRamp' && !isJumping && !isTumbling) {
-      startJump(speed)
+    if (
+      (obstacleType === 'jumpRamp' || obstacleType === 'bannerJump') &&
+      !isJumping &&
+      !isTumbling
+    ) {
+      // Start a jump
+      isJumping = true
+      jumpTimer = 0
+      doingFlip = true
+      flipCount = 0
+      lastFlipRotation = 0
+      currentGameSpeed = speed
+
+      // Banner jumps get a slightly higher and longer jump
+      if (obstacleType === 'bannerJump') {
+        // Longer duration for banner jumps
+        jumpDuration = 0.9 + speed * 2.0
+
+        // Create special indicator for banner jump with a shorter message
+        createPointIndicator('BANNER!', { ...position, y: position.y + 1 })
+      } else {
+        // Regular jump duration
+        jumpDuration = 0.67 + speed * 1.67
+
+        // Create +10 point indicator for jumping
+        createPointIndicator(10, { ...position })
+      }
+
       return true
     }
     return false

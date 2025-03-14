@@ -332,23 +332,11 @@ export const createSkiGame = (container: HTMLElement) => {
         resetGame()
       }
 
-      // Add Buy a Banner link
-      const bannerLink = document.createElement('a')
-      bannerLink.href = 'mailto:gnar@benallfree.com'
-      bannerLink.textContent = 'Buy a Banner (gnar@benallfree.com)'
-      bannerLink.style.display = 'block'
-      bannerLink.style.marginTop = '15px'
-      bannerLink.style.color = '#e07a5f'
-      bannerLink.style.textDecoration = 'none'
-      bannerLink.style.fontSize = '14px'
-      bannerLink.style.textAlign = 'center'
-
       gameOverScreen.appendChild(gameOverTitle)
       gameOverScreen.appendChild(scoreDisplay)
       gameOverScreen.appendChild(instructionsDiv)
       gameOverScreen.appendChild(performanceDiv)
       gameOverScreen.appendChild(restartButton)
-      gameOverScreen.appendChild(bannerLink)
 
       container.appendChild(gameOverScreen)
 
@@ -502,28 +490,31 @@ export const createSkiGame = (container: HTMLElement) => {
 
   // Handle hot chocolate pickup
   const handleHotChocolatePickup = (obstacle: any) => {
-    // Make sure it's a hot chocolate and it hasn't been picked up already
-    if (obstacle.type === 'hotChocolate' && obstacle.isCollidable) {
-      // Mark as not collidable so it can't be picked up again
-      obstacle.isCollidable = false
+    console.log('Hot chocolate picked up!')
 
-      // Add points for pickup
-      score += 20
+    // Prevent double collection by marking it as not collidable first
+    obstacle.isCollidable = false
 
-      // Restore a life
-      skier.gainExtraLife()
+    // Gain an extra life
+    const lifeGained = skier.gainExtraLife()
 
-      // Show extra life message
+    if (lifeGained) {
+      const currentLives = skier.getLives()
+      console.log('Extra life gained! Lives now:', currentLives)
+
+      // Update message to show current lives
       if (extraLifeMessageDisplay) {
-        extraLifeMessageDisplay.textContent = `Hot Chocolate! +1 Life (${skier.getLives()})!`
-        showExtraLifeMessage()
+        extraLifeMessageDisplay.textContent = `☕ HOT CHOCOLATE! LIVES: ${currentLives} ☕`
       }
+
+      // Show message
+      showExtraLifeMessage()
 
       // Update the UI
       updateLivesDisplay()
 
-      // Create floating point indicator
-      skier.createPointIndicator(20, skier.getPosition())
+      // Create floating point indicator with string instead of character
+      skier.createPointIndicator('☕ +1 LIFE', skier.getPosition())
     }
 
     // Remove hot chocolate from scene
@@ -657,12 +648,13 @@ export const createSkiGame = (container: HTMLElement) => {
       }, 2000)
     }
 
-    // Demo mode AI control - make the skier automatically dodge obstacles
+    // Update skier with controls input
+    // In demo mode, let the skier move automatically
     if (isDemoMode) {
-      // Simple AI: move randomly to simulate player input
+      // Simple automatic movement for demo mode
       const demoInputs = {
-        left: Math.random() > 0.95, // 5% chance to move left
-        right: Math.random() > 0.95, // 5% chance to move right
+        left: Math.random() < 0.1,
+        right: Math.random() < 0.1,
         up: false,
         down: false,
       }
@@ -734,11 +726,23 @@ export const createSkiGame = (container: HTMLElement) => {
 
         // Check if colliding with this obstacle
         if (obstacleManager.isColliding(skierPosition, obstacle)) {
-          if (obstacle.type === 'jumpRamp') {
-            // Handle jump ramp
+          if (obstacle.type === 'jumpRamp' || obstacle.type === 'bannerJump') {
+            // Handle jump ramp or banner jump
             skier.checkJumpCollision(obstacle.type, speed)
-            // Add points for jumps
-            score += 10
+
+            // Add points based on jump type
+            if (obstacle.type === 'jumpRamp') {
+              // Regular jump ramp
+              score += 10
+            } else if (obstacle.type === 'bannerJump') {
+              // Banner jumps are worth more
+              score += 25
+
+              // Log which banner was hit if available
+              if ('bannerType' in obstacle && obstacle.bannerType) {
+                console.log(`Hit ${obstacle.bannerType} banner!`)
+              }
+            }
           } else if (obstacle.isCollidable && !skier.getIsJumping()) {
             // Handle crash with tree or rock
             handleCollision()
