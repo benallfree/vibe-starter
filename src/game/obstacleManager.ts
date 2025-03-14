@@ -1,10 +1,6 @@
 import * as THREE from 'three'
-
-// Interface for game time - must match the one in skiGame.ts
-interface GameTime {
-  getDeltaTime: () => number
-  getSpeed: () => number
-}
+import { Obstacle, Position } from './types'
+import { createSnowMaterial } from './utils/rendering'
 
 // Available banners for banner jumps
 const BANNER_TYPES = ['pocketbase', 'pockethost', 'pocketpages']
@@ -32,17 +28,6 @@ export const createObstacleManager = (scene: THREE.Scene) => {
     })
   }
 
-  // Obstacle interface
-  interface Obstacle {
-    mesh: THREE.Object3D
-    type: string
-    position: { x: number; y: number; z: number }
-    size: { width: number; height: number; depth: number }
-    isCollidable: boolean
-    isPickup?: boolean
-    bannerType?: string
-  }
-
   // Create a tree obstacle
   const createTree = (position: THREE.Vector3): Obstacle => {
     // Create tree trunk
@@ -54,7 +39,7 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
     // Add snow on top of trunk
     const snowCapGeometry = new THREE.CylinderGeometry(0.22, 0.22, 0.1, 8)
-    const snowCapMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const snowCapMaterial = createSnowMaterial()
     const snowCap = new THREE.Mesh(snowCapGeometry, snowCapMaterial)
     snowCap.position.y = 2.02
     snowCap.castShadow = true
@@ -68,7 +53,7 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
     // Create snow on tree branches
     const snowTopGeometry = new THREE.ConeGeometry(0.6, 0.5, 8)
-    const snowTopMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const snowTopMaterial = createSnowMaterial()
     const snowTop = new THREE.Mesh(snowTopGeometry, snowTopMaterial)
     snowTop.position.y = 3.5
     snowTop.castShadow = true
@@ -127,7 +112,7 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
     // Create snow on top of rock
     const snowCapGeometry = new THREE.SphereGeometry(0.7, 8, 4, 0, Math.PI * 2, 0, Math.PI / 4)
-    const snowCapMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const snowCapMaterial = createSnowMaterial()
     const snowCap = new THREE.Mesh(snowCapGeometry, snowCapMaterial)
     snowCap.position.y = 0.7
     snowCap.castShadow = true
@@ -510,7 +495,7 @@ export const createObstacleManager = (scene: THREE.Scene) => {
   }
 
   // Update obstacles and check collisions
-  const update = (speed: number, playerPosition: { x: number; y: number; z: number }) => {
+  const update = (speed: number, playerPosition: Position) => {
     let collision = false
     let jumpCollision = false
     let collisionObstacleType = ''
@@ -559,7 +544,7 @@ export const createObstacleManager = (scene: THREE.Scene) => {
   }
 
   // Check if player is colliding with an obstacle
-  const isColliding = (playerPosition: { x: number; y: number; z: number }, obstacle: Obstacle) => {
+  const isColliding = (playerPosition: Position, obstacle: Obstacle) => {
     // Simple box collision check
     const playerSize = { width: 0.4, height: 1.6, depth: 0.3 }
 

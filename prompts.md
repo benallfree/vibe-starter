@@ -81,10 +81,13 @@ At this point, it seems like it's starting to collapse. there are about 4KLOC. F
   - it's nearly perfect now. the banner needs to appear in front of the posts though
   - what is the essage displayed on a banner jump? there is an extra message.
   - that's cool, but it only shows `ER`, i assume because it's only wide enough for 2 numeric digits perhaps?
+- [x] 🤮 11:48 please refactor the code for maximum context efficiency
+- [x] 11:53 reindex code
+- [x] 11:55 please refactor the code for maximum context efficiency by consolidating duplication into helper functions, moving and hoisting functions into separate files when possible, and generally making the code base more scanable and chunkable
+  - keep going, this is excellent
 
 ---
 
-- [ ] please refactor the code for maximum context efficiency
 - [ ] on mobile, the temporary alerts still block the view and are intrusive.
 - [ ] on mobile, there is a touch 'dead zone' that is no good. the skiier should only move during active swiping, not just holding. and it should move instantly but should strafe only at the speed allowed. a swipe and hold in place should not continue moving the skiier.
 - [ ] the bonus points for jumps aren't working as expected. it looks like the player only makes 2 flips regardless of how long he is airborn. i want the flips to be a constant speed so he can get more flips for more hang time

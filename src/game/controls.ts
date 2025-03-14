@@ -1,7 +1,9 @@
+import { InputState } from './types'
+
 // Controls for the skier
 export const createControls = (skier: any) => {
   // Track key states
-  const keys = {
+  const keys: InputState = {
     left: false,
     right: false,
     up: false,
@@ -52,19 +54,23 @@ export const createControls = (skier: any) => {
       case 'ArrowLeft':
       case 'a':
         keys.left = true
-        break
+        return
       case 'ArrowRight':
       case 'd':
         keys.right = true
-        break
+        return
       case 'ArrowUp':
       case 'w':
         keys.up = true
-        break
+        return
       case 'ArrowDown':
       case 's':
         keys.down = true
-        break
+        return
+      case 'Enter':
+        // Emit a restart event that game can listen for
+        window.dispatchEvent(new CustomEvent('restart-game'))
+        return
     }
   }
 
@@ -74,62 +80,62 @@ export const createControls = (skier: any) => {
       case 'ArrowLeft':
       case 'a':
         keys.left = false
-        break
+        return
       case 'ArrowRight':
       case 'd':
         keys.right = false
-        break
+        return
       case 'ArrowUp':
       case 'w':
         keys.up = false
-        break
+        return
       case 'ArrowDown':
       case 's':
         keys.down = false
-        break
+        return
     }
   }
 
   // Handle touch start
   const handleTouchStart = (event: TouchEvent) => {
-    if (event.touches.length > 0) {
-      touchStartX = event.touches[0].clientX
-      touchStartY = event.touches[0].clientY
-    }
+    if (event.touches.length === 0) return
+
+    touchStartX = event.touches[0].clientX
+    touchStartY = event.touches[0].clientY
   }
 
   // Handle touch move
   const handleTouchMove = (event: TouchEvent) => {
-    if (event.touches.length > 0) {
-      const touchX = event.touches[0].clientX
-      const touchY = event.touches[0].clientY
+    if (event.touches.length === 0) return
 
-      const deltaX = touchX - touchStartX
-      const deltaY = touchY - touchStartY
+    const touchX = event.touches[0].clientX
+    const touchY = event.touches[0].clientY
 
-      // Reset all keys first
-      keys.left = false
-      keys.right = false
-      keys.up = false
-      keys.down = false
+    const deltaX = touchX - touchStartX
+    const deltaY = touchY - touchStartY
 
-      // Determine direction based on delta
-      const threshold = 20 // Minimum distance to trigger movement
+    // Reset all keys first
+    keys.left = false
+    keys.right = false
+    keys.up = false
+    keys.down = false
 
-      if (Math.abs(deltaX) > threshold) {
-        if (deltaX > 0) {
-          keys.right = true
-        } else {
-          keys.left = true
-        }
+    // Determine direction based on delta
+    const threshold = 20 // Minimum distance to trigger movement
+
+    if (Math.abs(deltaX) > threshold) {
+      if (deltaX > 0) {
+        keys.right = true
+      } else {
+        keys.left = true
       }
+    }
 
-      if (Math.abs(deltaY) > threshold) {
-        if (deltaY > 0) {
-          keys.down = true
-        } else {
-          keys.up = true
-        }
+    if (Math.abs(deltaY) > threshold) {
+      if (deltaY > 0) {
+        keys.down = true
+      } else {
+        keys.up = true
       }
     }
   }
@@ -161,7 +167,7 @@ export const createControls = (skier: any) => {
   }
 
   // Get current input state
-  const getInputs = () => {
+  const getInputs = (): InputState => {
     return { ...keys }
   }
 

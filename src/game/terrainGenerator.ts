@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { createSnowMaterial } from './utils/rendering'
 
 // Create the terrain generator
 export const createTerrainGenerator = (scene: THREE.Scene) => {
@@ -124,14 +125,8 @@ export const createTerrainGenerator = (scene: THREE.Scene) => {
     snowTexture.wrapT = THREE.RepeatWrapping
     snowTexture.repeat.set(4, 4)
 
-    // Create material
-    const material = new THREE.MeshStandardMaterial({
-      color: snowColor,
-      roughness: 0.8,
-      metalness: 0.1,
-      flatShading: false,
-      map: snowTexture,
-    })
+    // Create material using our utility
+    const material = createSnowMaterial(snowColor, 0.8, 0.1, snowTexture)
 
     // Create mesh
     const mesh = new THREE.Mesh(geometry, material)
@@ -224,10 +219,19 @@ export const createTerrainGenerator = (scene: THREE.Scene) => {
     }
   }
 
+  // Get the chunk size
+  const getChunkSize = () => {
+    return {
+      width: segmentSize,
+      depth: segmentDepth,
+    }
+  }
+
   // Return public API
   return {
     initialize,
     update,
     reset,
+    getChunkSize,
   }
 }

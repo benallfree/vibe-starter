@@ -1,3 +1,5 @@
+import { createUIContainer, createUIElement } from './utils/ui'
+
 // Create and manage scoring system
 export const createScoreManager = () => {
   // Track score
@@ -12,75 +14,42 @@ export const createScoreManager = () => {
 
   // Initialize score display
   const initialize = () => {
-    // Create score element if it doesn't exist
-    if (!document.getElementById('score-display')) {
-      // Create score container
-      const scoreContainer = document.createElement('div')
-      scoreContainer.id = 'score-container'
-      scoreContainer.style.position = 'absolute'
-      scoreContainer.style.top = '20px'
-      scoreContainer.style.right = '20px'
-      scoreContainer.style.padding = '10px 20px'
-      scoreContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
-      scoreContainer.style.color = 'white'
-      scoreContainer.style.borderRadius = '5px'
-      scoreContainer.style.fontFamily = 'Arial, sans-serif'
-      scoreContainer.style.zIndex = '100'
+    // Create or get the score container
+    const scoreContainer = createUIContainer('score-container', 'top-right')
 
-      // Create score label
-      const scoreLabel = document.createElement('div')
-      scoreLabel.textContent = 'SCORE'
-      scoreLabel.style.fontSize = '14px'
-      scoreLabel.style.marginBottom = '5px'
+    // Create score label and display
+    const scoreLabel = createUIElement('score-label', 'div', scoreContainer)
+    scoreLabel.textContent = 'SCORE'
+    scoreLabel.style.fontSize = '14px'
+    scoreLabel.style.marginBottom = '5px'
 
-      // Create score display
-      scoreElement = document.createElement('div')
-      scoreElement.id = 'score-display'
-      scoreElement.textContent = '0'
-      scoreElement.style.fontSize = '24px'
-      scoreElement.style.fontWeight = 'bold'
+    scoreElement = createUIElement('score-display', 'div', scoreContainer)
+    scoreElement.textContent = '0'
+    scoreElement.style.fontSize = '24px'
+    scoreElement.style.fontWeight = 'bold'
 
-      // Create flip tracker
-      const flipLabel = document.createElement('div')
-      flipLabel.textContent = 'TOTAL FLIPS'
-      flipLabel.style.fontSize = '14px'
-      flipLabel.style.marginTop = '10px'
-      flipLabel.style.marginBottom = '5px'
+    // Create flip tracker
+    const flipLabel = createUIElement('flip-label', 'div', scoreContainer)
+    flipLabel.textContent = 'TOTAL FLIPS'
+    flipLabel.style.fontSize = '14px'
+    flipLabel.style.marginTop = '10px'
+    flipLabel.style.marginBottom = '5px'
 
-      flipElement = document.createElement('div')
-      flipElement.id = 'flip-display'
-      flipElement.textContent = '0'
-      flipElement.style.fontSize = '20px'
+    flipElement = createUIElement('flip-display', 'div', scoreContainer)
+    flipElement.textContent = '0'
+    flipElement.style.fontSize = '20px'
 
-      // Create combo tracker
-      const comboLabel = document.createElement('div')
-      comboLabel.textContent = 'FLIP COMBO'
-      comboLabel.style.fontSize = '14px'
-      comboLabel.style.marginTop = '10px'
-      comboLabel.style.marginBottom = '5px'
+    // Create combo tracker
+    const comboLabel = createUIElement('combo-label', 'div', scoreContainer)
+    comboLabel.textContent = 'FLIP COMBO'
+    comboLabel.style.fontSize = '14px'
+    comboLabel.style.marginTop = '10px'
+    comboLabel.style.marginBottom = '5px'
 
-      comboElement = document.createElement('div')
-      comboElement.id = 'combo-display'
-      comboElement.textContent = '0'
-      comboElement.style.fontSize = '20px'
-      comboElement.style.color = '#ffdd00'
-
-      // Assemble the elements
-      scoreContainer.appendChild(scoreLabel)
-      scoreContainer.appendChild(scoreElement)
-      scoreContainer.appendChild(flipLabel)
-      scoreContainer.appendChild(flipElement)
-      scoreContainer.appendChild(comboLabel)
-      scoreContainer.appendChild(comboElement)
-
-      // Add to document
-      document.body.appendChild(scoreContainer)
-    } else {
-      // Get existing elements
-      scoreElement = document.getElementById('score-display')
-      flipElement = document.getElementById('flip-display')
-      comboElement = document.getElementById('combo-display')
-    }
+    comboElement = createUIElement('combo-display', 'div', scoreContainer)
+    comboElement.textContent = '0'
+    comboElement.style.fontSize = '20px'
+    comboElement.style.color = '#ffdd00'
 
     // Reset score
     updateScore(0)
@@ -92,50 +61,47 @@ export const createScoreManager = () => {
   const updateScore = (newScore: number) => {
     score = newScore
 
-    // Update DOM
-    if (scoreElement) {
-      scoreElement.textContent = score.toString()
-    }
+    if (!scoreElement) return
+
+    scoreElement.textContent = score.toString()
   }
 
   // Update total flips display
   const updateFlips = (flips: number) => {
     totalFlips = flips
 
-    // Update DOM
-    if (flipElement) {
-      flipElement.textContent = totalFlips.toString()
-    }
+    if (!flipElement) return
+
+    flipElement.textContent = totalFlips.toString()
   }
 
   // Update current flip combo display
   const updateFlipCombo = (combo: number) => {
     lastJumpFlips = combo
 
-    // Update DOM
-    if (comboElement) {
-      comboElement.textContent = combo.toString()
+    if (!comboElement) return
 
-      // Change color based on combo count
-      if (combo === 0) {
-        comboElement.style.color = '#ffffff'
-      } else if (combo === 1) {
-        comboElement.style.color = '#ffdd00' // Gold for 1 flip
-      } else if (combo === 2) {
-        comboElement.style.color = '#00ffff' // Cyan for 2 flips
-      } else {
-        comboElement.style.color = '#ff00ff' // Purple for 3+ flips - impressive!
-      }
+    comboElement.textContent = combo.toString()
 
-      // Animate size on new combo
-      comboElement.style.fontSize = '28px'
-      setTimeout(() => {
-        if (comboElement) {
-          comboElement.style.fontSize = '20px'
-          comboElement.style.transition = 'font-size 0.3s ease-out'
-        }
-      }, 50)
+    // Change color based on combo count
+    if (combo === 0) {
+      comboElement.style.color = '#ffffff'
+    } else if (combo === 1) {
+      comboElement.style.color = '#ffdd00' // Gold for 1 flip
+    } else if (combo === 2) {
+      comboElement.style.color = '#00ffff' // Cyan for 2 flips
+    } else {
+      comboElement.style.color = '#ff00ff' // Purple for 3+ flips - impressive!
     }
+
+    // Animate size on new combo
+    comboElement.style.fontSize = '28px'
+    setTimeout(() => {
+      if (comboElement) {
+        comboElement.style.fontSize = '20px'
+        comboElement.style.transition = 'font-size 0.3s ease-out'
+      }
+    }, 50)
   }
 
   // Add points to score
