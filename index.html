@@ -26,35 +26,6 @@
         width: 100vw;
       }
 
-      .container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-      }
-
-      h1 {
-        font-size: 2.5rem;
-        color: #e07a5f;
-        margin-bottom: 1rem;
-      }
-
-      #status {
-        padding: 1rem;
-        margin: 1rem 0;
-        border-radius: 4px;
-        background-color: #f2cc8f;
-        width: 80%;
-        max-width: 400px;
-        transition: background-color 0.3s ease;
-      }
-
       #app {
         position: absolute;
         top: 0;
@@ -71,32 +42,52 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.7);
         color: white;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 1000;
+        backdrop-filter: blur(3px);
+        overflow-y: auto; /* Allow scrolling on very small devices */
       }
 
       .splash-content {
         max-width: 600px;
+        width: 90%; /* Use percentage width */
         text-align: center;
         padding: 20px;
+        background-color: rgba(0, 0, 0, 0.6);
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        margin: 15px; /* Add margin to prevent touching edges */
       }
 
       .splash-title {
         font-size: 3rem;
         color: #e07a5f;
         margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      #status {
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 4px;
+        background-color: rgba(242, 204, 143, 0.9);
+        color: #3d405b;
+        width: 80%;
+        max-width: 400px;
+        transition: background-color 0.3s ease;
+        font-weight: bold;
       }
 
       .controls-info {
-        background-color: rgba(255, 255, 255, 0.1);
-        padding: 20px;
+        background-color: rgba(255, 255, 255, 0.15);
+        padding: 15px;
         border-radius: 10px;
-        margin: 20px 0;
+        margin: 15px 0;
         text-align: left;
       }
 
@@ -121,26 +112,100 @@
         cursor: pointer;
         margin-top: 20px;
         transition: background-color 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
       }
 
       .start-button:hover {
         background-color: #45a049;
       }
+
+      /* Disabled start button */
+      .start-button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 768px) {
+        .splash-content {
+          padding: 15px;
+          width: 95%;
+          margin: 10px;
+        }
+
+        .splash-title {
+          font-size: 2.5rem;
+        }
+
+        h2 {
+          font-size: 1.4rem;
+        }
+
+        .controls-info {
+          padding: 10px;
+          margin: 10px 0;
+        }
+
+        .controls-info ul {
+          padding-left: 15px;
+        }
+
+        .controls-info li {
+          margin-bottom: 5px;
+          font-size: 0.9rem;
+        }
+
+        #status {
+          width: 90%;
+          padding: 0.8rem;
+          margin: 0.8rem 0;
+        }
+
+        .start-button {
+          padding: 12px 25px;
+          font-size: 18px;
+        }
+      }
+
+      /* Extra small screens */
+      @media (max-width: 480px) {
+        .splash-title {
+          font-size: 2rem;
+          margin-bottom: 0.5rem;
+        }
+
+        h2 {
+          font-size: 1.2rem;
+          margin-top: 0.5rem;
+        }
+
+        .controls-info h3 {
+          font-size: 1.1rem;
+        }
+
+        .controls-info li {
+          font-size: 0.85rem;
+          margin-bottom: 3px;
+        }
+
+        .start-button {
+          padding: 10px 20px;
+          font-size: 16px;
+          margin-top: 10px;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>GNAR</h1>
-      <h2>Ski down an endless mountain and rack up points!</h2>
-      <div id="status">Loading game...</div>
-      <div id="app"></div>
-    </div>
+    <div id="app"></div>
 
-    <!-- Splash screen -->
+    <!-- Semi-transparent splash screen overlay -->
     <div id="splash-screen">
       <div class="splash-content">
         <h1 class="splash-title">GNAR</h1>
         <h2>Endless Skiing Adventure</h2>
+
+        <div id="status">Loading game...</div>
 
         <div class="controls-info">
           <h3>Controls:</h3>
@@ -153,7 +218,7 @@
           </ul>
         </div>
 
-        <button id="start-game-button" class="start-button">Start Game</button>
+        <button id="start-game-button" class="start-button" disabled>Start Game</button>
       </div>
     </div>
 

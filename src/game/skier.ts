@@ -31,13 +31,13 @@ export const createSkier = (scene: THREE.Scene) => {
   // Skier state
   let isTumbling = false
   let tumblingTimer = 0
-  const tumblingDuration = 60 // frames
+  const tumblingDuration = 1.0 // in seconds (was 60 frames at 60fps)
   let lives = 3
 
   // Jump and flip state
   let isJumping = false
   let jumpTimer = 0
-  let jumpDuration = 40 // frames - now variable based on speed
+  let jumpDuration = 0.67 // in seconds (was 40 frames at 60fps)
   let jumpHeight = 0
   let doingFlip = false
   let flipCount = 0
@@ -106,11 +106,13 @@ export const createSkier = (scene: THREE.Scene) => {
   }
 
   // Update snow trail
-  const updateSnowTrail = () => {
+  const updateSnowTrail = (deltaTime: number = 1 / 60) => {
     if (!snowTrail) return
 
     // Create new particles at the skier's position
-    if (!isTumbling && Math.random() > 0.5) {
+    // Scale particle creation rate by deltaTime to maintain consistent density
+    if (!isTumbling && Math.random() > 1 - deltaTime * 30) {
+      // roughly 50% chance at 60fps
       if (trailParticles.length < maxTrailParticles) {
         trailParticles.push({
           position: new THREE.Vector3(
@@ -125,7 +127,7 @@ export const createSkier = (scene: THREE.Scene) => {
           ),
           size: Math.random() * 0.2 + 0.1,
           life: 0,
-          maxLife: Math.random() * 30 + 20,
+          maxLife: Math.random() * 0.5 + 0.33, // Convert to seconds from 20-50 frames at 60fps
         })
       }
     }
@@ -137,9 +139,11 @@ export const createSkier = (scene: THREE.Scene) => {
     for (let i = trailParticles.length - 1; i >= 0; i--) {
       const particle = trailParticles[i]
 
+      // Scale velocity by deltaTime for consistent movement speed
+      const scaledVelocity = particle.velocity.clone().multiplyScalar(deltaTime * 60)
       // Update particle position
-      particle.position.add(particle.velocity)
-      particle.life++
+      particle.position.add(scaledVelocity)
+      particle.life += deltaTime
 
       // Fade out as they age
       const opacity = 1 - particle.life / particle.maxLife
@@ -275,7 +279,7 @@ export const createSkier = (scene: THREE.Scene) => {
 
       // Calculate jump duration and height based on speed
       // As speed increases, allow for longer jumps with more air time
-      jumpDuration = 40 + speed * 100
+      jumpDuration = 0.67 + speed * 1.67 // Converted from frames to seconds (40 + speed * 100) / 60
 
       // Create +10 point indicator for jumping
       createPointIndicator(10, { ...position })
@@ -285,11 +289,12 @@ export const createSkier = (scene: THREE.Scene) => {
     return false
   }
 
-  // Update tumbling animation
-  const updateTumbling = () => {
+  // Update tumbling animation with proper time scaling
+  const updateTumbling = (deltaTime: number = 1 / 60) => {
     if (!isTumbling) return
 
-    tumblingTimer++
+    // Use actual seconds instead of frame counts
+    tumblingTimer += deltaTime
 
     if (tumblingTimer >= tumblingDuration) {
       // Recover from tumbling
@@ -303,18 +308,21 @@ export const createSkier = (scene: THREE.Scene) => {
       return
     }
 
-    // Apply tumbling rotation
+    // Apply tumbling rotation - use radians per second
     if (skierMesh) {
-      skierMesh.rotation.x += tumblingRotationX
-      skierMesh.rotation.z += tumblingRotationZ
+      // Convert to proper radians per second (was 0.2 radians per frame at 60fps)
+      const rotationSpeed = 0.2 * 60
+      skierMesh.rotation.x += tumblingRotationX * rotationSpeed * deltaTime
+      skierMesh.rotation.z += tumblingRotationZ * rotationSpeed * deltaTime
     }
   }
 
-  // Update jump animation
-  const updateJump = () => {
+  // Update jump animation with proper time scaling
+  const updateJump = (deltaTime: number = 1 / 60) => {
     if (!isJumping) return
 
-    jumpTimer++
+    // Use actual seconds instead of frame counts
+    jumpTimer += deltaTime
 
     // Calculate jump height - parabolic arc with height based on speed
     const jumpProgress = jumpTimer / jumpDuration
@@ -325,11 +333,13 @@ export const createSkier = (scene: THREE.Scene) => {
 
     // Apply flip rotation with multiple flips possible
     if (doingFlip && skierMesh) {
-      // Calculate rotation speed - faster at higher speeds
-      const flipSpeed = Math.PI * 2 * (1 + currentGameSpeed)
+      // Calculate rotation speed - adjusted for time-based animation
+      // Full 360 rotation (2π) scaled by speed and time
+      const flipSpeed = (Math.PI * 2 * (1 + currentGameSpeed)) / jumpDuration // radians per second
 
-      // Calculate new rotation
-      const newRotation = lastFlipRotation + flipSpeed / jumpDuration
+      // Calculate rotation increment based on deltaTime
+      const rotationIncrement = flipSpeed * deltaTime
+      const newRotation = lastFlipRotation + rotationIncrement
 
       // Apply rotation
       skierMesh.rotation.x = newRotation
@@ -401,25 +411,25 @@ export const createSkier = (scene: THREE.Scene) => {
     // Add to scene
     scene.add(sprite)
 
-    // Add to indicators array
+    // Add to indicators array - Convert max life to seconds (from 60 frames at 60fps)
     pointIndicators.push({
       mesh: sprite,
       life: 0,
-      maxLife: 60,
-      yVelocity: 0.05,
+      maxLife: 1.0, // 1 second
+      yVelocity: 0.05 / 60, // velocity per second
     })
   }
 
   // Update point indicators
-  const updatePointIndicators = () => {
+  const updatePointIndicators = (deltaTime: number = 1 / 60) => {
     for (let i = pointIndicators.length - 1; i >= 0; i--) {
       const indicator = pointIndicators[i]
 
-      // Update life
-      indicator.life++
+      // Update life with delta time
+      indicator.life += deltaTime
 
-      // Move upward
-      indicator.mesh.position.y += indicator.yVelocity
+      // Scale movement by delta time
+      indicator.mesh.position.y += indicator.yVelocity * deltaTime * 60
 
       // Fade out
       if (indicator.mesh instanceof THREE.Sprite) {

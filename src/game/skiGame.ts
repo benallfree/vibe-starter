@@ -5,6 +5,19 @@ import { createScoreManager } from './scoreManager'
 import { createSkier } from './skier'
 import { createTerrainGenerator } from './terrainGenerator'
 
+// Define GameTime interface
+interface GameTime {
+  getDeltaTime: () => number
+  getSpeed: () => number
+}
+
+// Extend Window interface
+declare global {
+  interface Window {
+    gameTime?: GameTime
+  }
+}
+
 // Create the main ski game
 export const createSkiGame = (container: HTMLElement) => {
   // Core Three.js components
@@ -17,10 +30,33 @@ export const createSkiGame = (container: HTMLElement) => {
   let score = 0
   let isGameRunning = false
   let animationFrameId = 0
+  let lastFrameTime = 0
+
+  // Delta time and fixed time step settings
+  const FIXED_TIME_STEP = 1 / 60 // 60 fps is our target
+  const MAX_DELTA_TIME = 0.1 // Cap maximum delta to prevent large jumps
+  let accumulatedTime = 0
+  let currentDeltaTime = FIXED_TIME_STEP
+
+  // Performance monitoring
+  let frameCount = 0
+  let lastFpsUpdateTime = 0
+  let currentFps = 60
+  let performanceMode = 'auto' // 'auto', 'high', 'medium', 'low'
+
+  // Define gameTime object
+  const gameTime: GameTime = {
+    getDeltaTime: () => currentDeltaTime,
+    getSpeed: () => speed,
+  }
+
+  // Make this globally accessible for all animations
+  const getFixedDeltaTime = () => FIXED_TIME_STEP
+  const getCurrentSpeed = () => speed
 
   // Snow particles
   let snowParticles: THREE.Points | null = null
-  const SNOW_COUNT = 2000
+  let SNOW_COUNT = 2000 // Changed from const to let to allow performance adjustments
 
   // UI elements
   let livesDisplay: HTMLElement | null = null
@@ -28,6 +64,9 @@ export const createSkiGame = (container: HTMLElement) => {
   let lifeMessageDisplay: HTMLElement | null = null
   let lifeMessageTimeout: number | null = null
   let extraLifeMessageDisplay: HTMLElement | null = null // New UI element for hot chocolate pickup
+
+  // Demo mode flag
+  let isDemoMode = false
 
   // Set up renderer
   renderer.setSize(window.innerWidth, window.innerHeight)
@@ -101,7 +140,7 @@ export const createSkiGame = (container: HTMLElement) => {
   }
 
   // Update snow particles
-  const updateSnow = () => {
+  const updateSnow = (deltaTime: number) => {
     if (!snowParticles) return
 
     const positions = snowParticles.geometry.attributes.position.array as Float32Array
@@ -110,7 +149,7 @@ export const createSkiGame = (container: HTMLElement) => {
       // Make snow fall downward and slightly to the side (wind effect)
       positions[i * 3 + 1] -= Math.random() * 0.1 + 0.05 // y (fall speed)
       positions[i * 3] += (Math.random() - 0.5) * 0.05 // x (slight drift)
-      positions[i * 3 + 2] += speed * 0.5 // z (move with player)
+      positions[i * 3 + 2] += speed * 0.5 * deltaTime // z (move with player)
 
       // Reset if out of view
       if (positions[i * 3 + 1] < -5) {
@@ -189,14 +228,14 @@ export const createSkiGame = (container: HTMLElement) => {
       container.appendChild(livesDisplay)
     }
 
-    // Create life lost message (hidden by default)
+    // Create life lost message (hidden by default, positioned below skier)
     if (!lifeMessageDisplay) {
       lifeMessageDisplay = document.createElement('div')
       lifeMessageDisplay.id = 'life-message'
       lifeMessageDisplay.style.position = 'absolute'
-      lifeMessageDisplay.style.top = '50%'
+      lifeMessageDisplay.style.bottom = '20%' // Position below skier
       lifeMessageDisplay.style.left = '50%'
-      lifeMessageDisplay.style.transform = 'translate(-50%, -50%)'
+      lifeMessageDisplay.style.transform = 'translate(-50%, 0)' // Adjust transform for bottom positioning
       lifeMessageDisplay.style.color = 'red'
       lifeMessageDisplay.style.fontSize = '36px'
       lifeMessageDisplay.style.fontFamily = 'Arial, sans-serif'
@@ -237,6 +276,49 @@ export const createSkiGame = (container: HTMLElement) => {
       scoreDisplay.id = 'final-score'
       scoreDisplay.style.marginBottom = '40px'
 
+      // Add instructions to game over screen
+      const instructionsDiv = document.createElement('div')
+      instructionsDiv.className = 'controls-info'
+      instructionsDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+      instructionsDiv.style.padding = '20px'
+      instructionsDiv.style.borderRadius = '10px'
+      instructionsDiv.style.marginBottom = '30px'
+      instructionsDiv.style.maxWidth = '400px'
+      instructionsDiv.style.textAlign = 'left'
+      instructionsDiv.style.fontSize = '18px'
+
+      instructionsDiv.innerHTML = `
+        <h3>Controls:</h3>
+        <ul>
+          <li>Arrow Keys or WASD: Move the skier</li>
+          <li>Mobile: Tilt device or touch screen</li>
+          <li>Avoid trees and rocks</li>
+          <li>Use ramps for big air!</li>
+          <li>Collect hot chocolate for extra lives</li>
+        </ul>
+      `
+
+      // Add performance settings
+      const performanceDiv = document.createElement('div')
+      performanceDiv.className = 'performance-settings'
+      performanceDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+      performanceDiv.style.padding = '15px'
+      performanceDiv.style.borderRadius = '10px'
+      performanceDiv.style.marginBottom = '20px'
+      performanceDiv.style.maxWidth = '400px'
+      performanceDiv.style.textAlign = 'center'
+      performanceDiv.style.fontSize = '16px'
+
+      performanceDiv.innerHTML = `
+        <h3>Performance Settings:</h3>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+          <button id="performance-low" style="padding: 8px 12px; background-color: #777; border: none; color: white; border-radius: 4px;">Low</button>
+          <button id="performance-medium" style="padding: 8px 12px; background-color: #777; border: none; color: white; border-radius: 4px;">Medium</button>
+          <button id="performance-high" style="padding: 8px 12px; background-color: #777; border: none; color: white; border-radius: 4px;">High</button>
+          <button id="performance-auto" style="padding: 8px 12px; background-color: #4CAF50; border: none; color: white; border-radius: 4px;">Auto</button>
+        </div>
+      `
+
       const restartButton = document.createElement('button')
       restartButton.textContent = 'Restart Game'
       restartButton.style.padding = '15px 30px'
@@ -252,19 +334,78 @@ export const createSkiGame = (container: HTMLElement) => {
 
       gameOverScreen.appendChild(gameOverTitle)
       gameOverScreen.appendChild(scoreDisplay)
+      gameOverScreen.appendChild(instructionsDiv)
+      gameOverScreen.appendChild(performanceDiv)
       gameOverScreen.appendChild(restartButton)
 
       container.appendChild(gameOverScreen)
+
+      // Add event listeners for performance buttons
+      setTimeout(() => {
+        const lowBtn = document.getElementById('performance-low')
+        const mediumBtn = document.getElementById('performance-medium')
+        const highBtn = document.getElementById('performance-high')
+        const autoBtn = document.getElementById('performance-auto')
+
+        if (lowBtn) {
+          lowBtn.addEventListener('click', () => {
+            performanceMode = 'low'
+            SNOW_COUNT = 500
+            renderer.setPixelRatio(Math.min(1.0, window.devicePixelRatio))
+            updatePerformanceButtons()
+
+            if (snowParticles) {
+              scene.remove(snowParticles)
+              createSnowParticles()
+            }
+          })
+        }
+
+        if (mediumBtn) {
+          mediumBtn.addEventListener('click', () => {
+            performanceMode = 'medium'
+            SNOW_COUNT = 1000
+            renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio))
+            updatePerformanceButtons()
+
+            if (snowParticles) {
+              scene.remove(snowParticles)
+              createSnowParticles()
+            }
+          })
+        }
+
+        if (highBtn) {
+          highBtn.addEventListener('click', () => {
+            performanceMode = 'high'
+            SNOW_COUNT = 2000
+            renderer.setPixelRatio(window.devicePixelRatio)
+            updatePerformanceButtons()
+
+            if (snowParticles) {
+              scene.remove(snowParticles)
+              createSnowParticles()
+            }
+          })
+        }
+
+        if (autoBtn) {
+          autoBtn.addEventListener('click', () => {
+            performanceMode = 'auto'
+            updatePerformanceButtons()
+          })
+        }
+      }, 0)
     }
 
-    // Create extra life message (hidden initially)
+    // Create extra life message (hidden initially, positioned below skier)
     if (!extraLifeMessageDisplay) {
       extraLifeMessageDisplay = document.createElement('div')
       extraLifeMessageDisplay.id = 'extra-life-message'
       extraLifeMessageDisplay.style.position = 'absolute'
-      extraLifeMessageDisplay.style.top = '40%'
+      extraLifeMessageDisplay.style.bottom = '25%' // Position below skier
       extraLifeMessageDisplay.style.left = '50%'
-      extraLifeMessageDisplay.style.transform = 'translate(-50%, -50%)'
+      extraLifeMessageDisplay.style.transform = 'translate(-50%, 0)' // Adjust transform for bottom positioning
       extraLifeMessageDisplay.style.color = '#2fc82f' // Green color for good things
       extraLifeMessageDisplay.style.fontSize = '36px'
       extraLifeMessageDisplay.style.fontFamily = 'Arial, sans-serif'
@@ -381,20 +522,149 @@ export const createSkiGame = (container: HTMLElement) => {
   }
 
   // Animation loop
-  const animate = () => {
+  const animate = (timestamp = 0) => {
     if (!isGameRunning) return
 
-    // Update score based on distance traveled
-    score += speed * 10
+    // Calculate actual delta time in seconds
+    if (lastFrameTime === 0) {
+      lastFrameTime = timestamp
+      lastFpsUpdateTime = timestamp
+    }
+
+    const frameTimeDelta = (timestamp - lastFrameTime) / 1000
+    lastFrameTime = timestamp
+
+    // Update FPS counter
+    frameCount++
+    if (timestamp - lastFpsUpdateTime >= 1000) {
+      currentFps = Math.round((frameCount * 1000) / (timestamp - lastFpsUpdateTime))
+
+      // Auto-adjust quality based on performance
+      if (performanceMode === 'auto') {
+        adjustPerformance(currentFps)
+      }
+
+      // Reset frame counter
+      frameCount = 0
+      lastFpsUpdateTime = timestamp
+    }
+
+    // Clamp delta time to prevent large jumps (e.g., when tab was in background)
+    const clampedFrameDelta = Math.min(frameTimeDelta, MAX_DELTA_TIME)
+
+    // Accumulate time and update in fixed time steps
+    accumulatedTime += clampedFrameDelta
+
+    // Store current delta time for other animations
+    currentDeltaTime = FIXED_TIME_STEP
+
+    // Update in fixed steps
+    let updatesThisFrame = 0
+    while (accumulatedTime >= FIXED_TIME_STEP && updatesThisFrame < 3) {
+      // Update game state with fixed time step
+      updateGameState(FIXED_TIME_STEP)
+      accumulatedTime -= FIXED_TIME_STEP
+      updatesThisFrame++
+    }
+
+    // Render scene
+    renderer.render(scene, camera)
+
+    // Schedule next frame
+    animationFrameId = requestAnimationFrame(animate)
+  }
+
+  // Adjust performance settings based on FPS
+  const adjustPerformance = (fps: number) => {
+    if (fps < 30) {
+      // Low performance - reduce quality
+      if (performanceMode !== 'low') {
+        performanceMode = 'low'
+        SNOW_COUNT = 500 // Reduce snow particles
+        renderer.setPixelRatio(Math.min(1.0, window.devicePixelRatio))
+
+        // Recreate snow with fewer particles
+        if (snowParticles) {
+          scene.remove(snowParticles)
+          createSnowParticles()
+        }
+      }
+    } else if (fps < 45) {
+      // Medium performance
+      if (performanceMode !== 'medium') {
+        performanceMode = 'medium'
+        SNOW_COUNT = 1000
+        renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio))
+
+        // Recreate snow with moderate particles
+        if (snowParticles) {
+          scene.remove(snowParticles)
+          createSnowParticles()
+        }
+      }
+    } else {
+      // High performance - use full quality
+      if (performanceMode !== 'high') {
+        performanceMode = 'high'
+        SNOW_COUNT = 2000
+        renderer.setPixelRatio(window.devicePixelRatio)
+
+        // Recreate snow with full particles
+        if (snowParticles) {
+          scene.remove(snowParticles)
+          createSnowParticles()
+        }
+      }
+    }
+  }
+
+  // Update game state with fixed time step
+  const updateGameState = (deltaTime: number) => {
+    // Update score based on distance traveled (only if not in demo mode)
+    if (!isDemoMode) {
+      score += speed * 10 * deltaTime * 60 // Scale to make it similar to original timing
+    }
     const currentScore = Math.floor(score)
 
-    // Update UI
+    // Update UI (hide UI elements in demo mode)
     if (livesDisplay) {
-      livesDisplay.innerHTML = `Lives: ${skier.getLives()} | Score: ${currentScore}`
+      if (isDemoMode) {
+        livesDisplay.style.display = 'none'
+      } else {
+        livesDisplay.style.display = 'block'
+        livesDisplay.innerHTML = `Lives: ${skier.getLives()} | Score: ${currentScore}`
+      }
+    }
+
+    // If in demo mode, automatically reset if skier crashes
+    if (isDemoMode && skier.getIsTumbling()) {
+      // Wait 2 seconds then reset
+      setTimeout(() => {
+        if (isDemoMode) {
+          // Reset skier but keep demo mode running
+          skier.reset()
+          skier.resetLives()
+        }
+      }, 2000)
     }
 
     // Update skier with controls input
-    skier.update(controls.getInputs(), speed)
+    // In demo mode, let the skier move automatically
+    if (isDemoMode) {
+      // Simple automatic movement for demo mode
+      const demoInputs = {
+        left: Math.random() < 0.1,
+        right: Math.random() < 0.1,
+        up: false,
+        down: false,
+      }
+
+      // Avoid obstacles by moving randomly
+      skier.update(demoInputs, speed, deltaTime * 60) // Scale for compatibility with original speeds
+    } else {
+      // Normal user controls
+      skier.update(controls.getInputs(), speed, deltaTime * 60) // Scale for compatibility with original speeds
+    }
 
     // Check if skier landed from a jump and update flip count in score manager
     if (!skier.getIsJumping() && scoreManager.getLastJumpFlips() !== skier.getFlipCount()) {
@@ -414,17 +684,17 @@ export const createSkiGame = (container: HTMLElement) => {
       }
     }
 
-    // Update terrain
-    terrainGenerator.update(speed)
+    // Update terrain with fixed speed
+    terrainGenerator.update(speed * deltaTime * 60)
 
     // Update snow particles
-    updateSnow()
+    updateSnow(deltaTime * 60)
 
     // Get current skier position for collision detection
     const skierPosition = skier.getPosition()
 
     // Update obstacles
-    obstacleManager.update(speed, skierPosition)
+    obstacleManager.update(speed * deltaTime * 60, skierPosition)
 
     // Check for collisions with all obstacle types
     // First, prioritize checking for hot chocolate pickups
@@ -470,18 +740,15 @@ export const createSkiGame = (container: HTMLElement) => {
       }
     }
 
-    // Gradually increase speed
-    speed += 0.0001
-
-    // Render scene
-    renderer.render(scene, camera)
+    // Gradually increase speed - scale by delta time
+    speed += 0.0001 * deltaTime * 60
 
     // Update camera to follow skier
     updateCameraPosition()
-
-    // Continue animation loop
-    animationFrameId = requestAnimationFrame(animate)
   }
+
+  // Expose gameTime globally so other modules can access it
+  ;(window as any).gameTime = gameTime
 
   // Update camera position to follow skier
   const updateCameraPosition = () => {
@@ -517,6 +784,9 @@ export const createSkiGame = (container: HTMLElement) => {
 
     speed = 0.1
     score = 0
+    lastFrameTime = 0
+    accumulatedTime = 0
+    currentDeltaTime = FIXED_TIME_STEP
 
     // Reset terrain
     terrainGenerator.reset()
@@ -567,6 +837,48 @@ export const createSkiGame = (container: HTMLElement) => {
     renderer.setSize(window.innerWidth, window.innerHeight)
   }
 
+  // Set demo mode (allows switching between demo and real play)
+  const setDemoMode = (demoMode: boolean) => {
+    // Only do something if changing the mode
+    if (isDemoMode === demoMode) return
+
+    // Update demo mode flag
+    isDemoMode = demoMode
+
+    if (!demoMode) {
+      // Switching from demo to real play mode
+      // Reset the game state for a fresh start but maintain skier instance
+      score = 0
+      speed = 0.1
+
+      // Reset terrain and obstacles
+      terrainGenerator.reset()
+      obstacleManager.reset()
+
+      // Reset skier position and lives but don't recreate the skier
+      skier.reset()
+      skier.resetLives()
+
+      // Reset controls and score
+      controls.reset()
+      scoreManager.reset()
+
+      // Show UI elements
+      if (livesDisplay) {
+        livesDisplay.style.display = 'block'
+      }
+
+      // Update lives display
+      updateLivesDisplay()
+    } else {
+      // Switching to demo mode
+      // Hide UI elements
+      if (livesDisplay) {
+        livesDisplay.style.display = 'none'
+      }
+    }
+  }
+
   // Initialize the game
   const initialize = () => {
     setupLighting()
@@ -581,10 +893,40 @@ export const createSkiGame = (container: HTMLElement) => {
   }
 
   // Start the game
-  const start = () => {
+  const start = (demoMode = false) => {
+    // Set demo mode flag
+    isDemoMode = demoMode
+
     initialize()
     isGameRunning = true
+
+    // In demo mode, hide some UI elements
+    if (isDemoMode && livesDisplay) {
+      livesDisplay.style.display = 'none'
+    }
+
     animate()
+  }
+
+  // Update performance buttons to highlight the selected option
+  const updatePerformanceButtons = () => {
+    const btns = {
+      low: document.getElementById('performance-low'),
+      medium: document.getElementById('performance-medium'),
+      high: document.getElementById('performance-high'),
+      auto: document.getElementById('performance-auto'),
+    }
+
+    // Reset all buttons
+    Object.values(btns).forEach((btn) => {
+      if (btn) btn.style.backgroundColor = '#777'
+    })
+
+    // Highlight the selected button
+    const selectedBtn = btns[performanceMode as keyof typeof btns]
+    if (selectedBtn) {
+      selectedBtn.style.backgroundColor = '#4CAF50'
+    }
   }
 
   // Return the public API
@@ -592,5 +934,8 @@ export const createSkiGame = (container: HTMLElement) => {
     initialize,
     start,
     reset: resetGame,
+    handleResize,
+    setDemoMode,
+    getGameTime: () => gameTime,
   }
 }

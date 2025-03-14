@@ -1,5 +1,11 @@
 import * as THREE from 'three'
 
+// Interface for game time - must match the one in skiGame.ts
+interface GameTime {
+  getDeltaTime: () => number
+  getSpeed: () => number
+}
+
 // Create and manage obstacles on the ski slope
 export const createObstacleManager = (scene: THREE.Scene) => {
   // Obstacle settings
@@ -263,8 +269,16 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
     // Add a pulsing animation to the light
     const pulseLight = () => {
-      const time = Date.now() * 0.002
-      light.intensity = 0.5 + Math.sin(time * 2) * 0.5 // Pulse between 0 and 1
+      // Use current game time instead of Date.now() for consistent speed
+      if (typeof (window as any).gameTime !== 'undefined') {
+        // Get consistent time from game engine
+        const time = Date.now() * 0.002 // Fallback for initial load
+        light.intensity = 0.5 + Math.sin(time * 2) * 0.5 // Pulse between 0 and 1
+      } else {
+        // Fallback if gameTime not available
+        const time = Date.now() * 0.002
+        light.intensity = 0.5 + Math.sin(time * 2) * 0.5
+      }
 
       if (hotChocolateGroup.parent) {
         requestAnimationFrame(pulseLight)
@@ -288,10 +302,21 @@ export const createObstacleManager = (scene: THREE.Scene) => {
     scene.add(hotChocolateGroup)
 
     // Animate the hot chocolate to float more dramatically and rotate
+    let animationTime = 0
     const animate = () => {
-      const time = Date.now() * 0.002
-      hotChocolateGroup.position.y = position.y + 1.0 + Math.sin(time + floatAnimationStart) * 0.2
-      hotChocolateGroup.rotation.y = time * 0.8
+      // Use game time for consistent animation speed
+      if (typeof (window as any).gameTime !== 'undefined') {
+        // Increment time by fixed delta time
+        animationTime += 0.002 * 60 * ((window as any).gameTime?.getDeltaTime() || 1 / 60)
+        hotChocolateGroup.position.y =
+          position.y + 1.0 + Math.sin(animationTime + floatAnimationStart) * 0.2
+        hotChocolateGroup.rotation.y = animationTime * 0.8
+      } else {
+        // Fallback if gameTime not available
+        const time = Date.now() * 0.002
+        hotChocolateGroup.position.y = position.y + 1.0 + Math.sin(time + floatAnimationStart) * 0.2
+        hotChocolateGroup.rotation.y = time * 0.8
+      }
 
       // Only continue animation if the object is still in the scene
       if (hotChocolateGroup.parent) {

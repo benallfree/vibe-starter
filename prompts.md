@@ -1,3 +1,7 @@
+# Prompt Log
+
+Each top-level bullet is a fresh chat session. Cursor 0.46.11, Claude Sonnet 3.7
+
 - [x] 5:30pm i want to make a 3d web game where someone skis down an endless hill. does the term "gnar gnar" refer only to snowboarding?
 - [x] 5:32pm make it go slower at first
   - when the game resets after crashing, it suddenly goes faster and the arrow keys no longer work
@@ -17,9 +21,20 @@
   - sometimes i pick them up but i don't get credit
   - [reject] actually it seems like it's not going past 5 lives. take that out
   - [reject manual edit] ok this is great, make it less hot chocolate now
-- [ ] 6:55pm this may sound strange, but i want all instructions and notifications to be below/behind the skiier at all times. i need to be able to look ahead and see what's going on but the temporary notices block my view. also, please make the instructions only show up on the splash page (please make a splash page) and then on the game over display.
-- [ ] the fps is slower on mobile and the whole game goes slower. can you make it so it's the same speed regardless of fps?
-- [ ] make big banners that the skiier goes under with advertisements on them
+- [x] 6:55pm this may sound strange, but i want all instructions and notifications to be below/behind the skiier at all times. i need to be able to look ahead and see what's going on but the temporary notices block my view. also, please make the instructions only show up on the splash page (please make a splash page) and then on the game over display.
+  - that's good. the splash page is overlapping a different splash page though. please merge them, i want both the server connection status and the other information all in one splash page
+  - great, can you display the game playing in demo mode faintly behind the splash? or like the splash is an overlay with some opacity?
+  - oops, demo mode made two skiiers appear when the game started. pleaase check carefully
+- [x] 7:08pm can you please check to make sure the player gets more points for more hang time? a jump should be +50 points, but each flip while they are airborn should be anouther +50. big jumps should shower them with +50
+- [x] 7:09pm the fps is slower on mobile and the whole game goes slower. can you make it so it's the same speed regardless of fps?
+  - [reject] no, that didn't work. it's still extremely slow on mobile
+- [x] 7:23pm the splash page currently doesn't fit on mobile
+- [x] 7:30pm it needs to begin with things moving a little faster. the beginning is too slow
+- [ ] on mobile, the skiier should only move during active swiping. a swipe and hold in place should not continue moving the skiier.
+- [ ] the bonus points for jumps aren't working as expected. it looks like the player only makes 2 flips regardless of how long he is airborn. i want the flips to be a constant speed so he can get more flips for more hang time
+- [ ] in demo mode, it shouldn't display any messages it should just ski
+- [ ] make big banners that the skiier goes under with advertisements on them. they appear periodically, not more than 1 every 10 seconds.
+- [ ] make "bonus runs" that are just glorious runs of jumps and no obstacles. and even more rarely, make gloriously long runs of just collecting hot chocolate without a worry in the world
 - [ ] pressing the forward arrow makes him french fry and squat down and accelerate
 - [ ] pressing the back arrow makes him pizza and slow down
 - [ ] moving mouse left/right/up/down does the same as arrows
