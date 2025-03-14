@@ -58,6 +58,14 @@ At this point, it seems like it's starting to collapse. there are about 4KLOC. 3
   - move the fenceline and poles out so they are not on the field
 - [x] 10:57 make sure there are never more than 2 signs in view at a time
 - [x] 10:59 make a backboard for each banner (800x200 ratio) that connects to the pole that the banner displays on. the banner goes on the inside (track) side of the backboard
+  - sorry, i mean 45 degrees yaw inward from each side
+  - that's good, but please: stagger them, make sure they are centered on the pole, and also i can't see the images. are they on the wrong side?
+  - i still cannot see the banner images
+  - the images are now flipped about the x axis
+  - nope, they needed to be rolled 180 degrees. revert and try again
+  - now they need to be pitched 180 degrees
+  - nope. let's scratch all the image placement code and try again. it's quite simple. the image should be placed rightside-up on the backboard facing the skiier. that's it
+  - the images are not showing, and no two signs should be near each other
 
 ---
 
