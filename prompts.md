@@ -32,11 +32,37 @@ Each top-level bullet is a fresh chat session. Cursor 0.46.11, Claude Sonnet 3.7
 - [x] 7:30pm it needs to begin with things moving a little faster. the beginning is too slow
   - he needs to fall over faster, slide fora while, and then get up faster
   - [reject] no, lots of regressions in there. try again. i just want the skiier to fall down faster and stand up faster, please don't get fancy
-- [ ] 7:41pm make big banners that the skiier goes under with advertisements on them. they appear periodically, not more than 1 every 10 seconds. make a ts file of ads and a folder in static named ads. i'll fill it. for now, ads is just an array of objects and each object has a src attribute. add a little `advertise with us` link in the splash and game over pages.
+
+---
+
+At this point, it seems like it's starting to collapse. there are about 4KLOC. 3 tries at ad banners
+
+---
+
+- [x] 7:41pm-8pm make big banners that the skiier goes under with advertisements on them. they appear periodically, not more than 1 every 10 seconds. make a ts file of ads and a folder in static named ads. i'll fill it. for now, ads is just an array of objects and each object has a src attribute. add a little `advertise with us` link in the splash and game over pages.
   - continue without creating images. i already added pockethost.webp, use that one
   - please check the code for errors
   - (pasted vite code message)
-  - [revert all] i want the skiier to pas under big banners as they ski down the hill. they appear periodically, not more than 1 every 10 seconds. make a ts file of banners. public/banners contains the banner images to use. for now, a banner is just an an object with a src attribute. add a little `Buy a Banner` (gnar@benallfree.com) link in the splash and game over pages.
+  - [revert all]
+- [x] 9:55pm i want the skiier to pas under big banners as they ski down the hill. they appear periodically, not more than 1 every 10 seconds. make a ts file of banners. public/banners contains the banner images to use. for now, a banner is just an an object with a src attribute. add a little `Buy a Banner` (gnar@benallfree.com) link in the splash and game over pages.
+  - skiGame.ts:649 Uncaught TypeError: controls.getDirection is not a function at updateGameState (skiGame.ts:649:16) at animate (skiGame.ts:583:7)
+  - skiGame.ts:652 Uncaught TypeError: terrainGenerator.getChunkSize is not a function at updateGameState (skiGame.ts:652:33) at animate (skiGame.ts:583:7). please run a tsc checker to find all of this
+  - the poles and banner should start in the distance and then pass by the skiier as he races down the hill. right now, i see the banner fixed in the distance and the poles up front by the skiier
+- [x] 10:21pm i placed banners in public/banners/\*.webp. I want little obstacle signs posted along the way in the place of trees. little sign posts showing the 800x200 posters. maybe like every 100th tree. also add a little `Buy a Banner` (gnar@benallfree.com) link in the splash and game over pages.
+  - [revert all] that's pretty good, but the signs are sideways. can you fix that?
+- [x] 10:38pm i placed banners in public/banners/\*.webp. please make fencing along both sides of the track and occasionally place banners on those fence segments.
+  - that's pretty good, but the fence segments need to run down the side of the slope in parallel and the banners are affixed on them facing inward. the banners are always 800x200
+  - that's GREAT. make the banners much bigger. at least 2x
+  - excellent. make the banners even 2x bigger and place them high on poles so i can see them coming from a long way away
+  - fps went way down. is there a way to precache and reuse the objects? you can make sure there is never a duplicate showing
+  - move the fenceline and poles out so they are not on the field
+- [x] 10:57 make sure there are never more than 2 signs in view at a time
+- [x] 10:59 make a backboard for each banner (800x200 ratio) that connects to the pole that the banner displays on. the banner goes on the inside (track) side of the backboard
+
+---
+
+- [ ] please refactor the code for maximum context efficiency
+- [ ] on mobile, the temporary alerts still block the view and are intrusive.
 - [ ] on mobile, there is a touch 'dead zone' that is no good. the skiier should only move during active swiping, not just holding. and it should move instantly but should strafe only at the speed allowed. a swipe and hold in place should not continue moving the skiier.
 - [ ] the bonus points for jumps aren't working as expected. it looks like the player only makes 2 flips regardless of how long he is airborn. i want the flips to be a constant speed so he can get more flips for more hang time
 - [ ] in demo mode, it shouldn't display any messages it should just ski

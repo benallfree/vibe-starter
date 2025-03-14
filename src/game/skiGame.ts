@@ -332,11 +332,23 @@ export const createSkiGame = (container: HTMLElement) => {
         resetGame()
       }
 
+      // Add Buy a Banner link
+      const bannerLink = document.createElement('a')
+      bannerLink.href = 'mailto:gnar@benallfree.com'
+      bannerLink.textContent = 'Buy a Banner (gnar@benallfree.com)'
+      bannerLink.style.display = 'block'
+      bannerLink.style.marginTop = '15px'
+      bannerLink.style.color = '#e07a5f'
+      bannerLink.style.textDecoration = 'none'
+      bannerLink.style.fontSize = '14px'
+      bannerLink.style.textAlign = 'center'
+
       gameOverScreen.appendChild(gameOverTitle)
       gameOverScreen.appendChild(scoreDisplay)
       gameOverScreen.appendChild(instructionsDiv)
       gameOverScreen.appendChild(performanceDiv)
       gameOverScreen.appendChild(restartButton)
+      gameOverScreen.appendChild(bannerLink)
 
       container.appendChild(gameOverScreen)
 
@@ -490,31 +502,28 @@ export const createSkiGame = (container: HTMLElement) => {
 
   // Handle hot chocolate pickup
   const handleHotChocolatePickup = (obstacle: any) => {
-    console.log('Hot chocolate picked up!')
+    // Make sure it's a hot chocolate and it hasn't been picked up already
+    if (obstacle.type === 'hotChocolate' && obstacle.isCollidable) {
+      // Mark as not collidable so it can't be picked up again
+      obstacle.isCollidable = false
 
-    // Prevent double collection by marking it as not collidable first
-    obstacle.isCollidable = false
+      // Add points for pickup
+      score += 20
 
-    // Gain an extra life
-    const lifeGained = skier.gainExtraLife()
+      // Restore a life
+      skier.gainExtraLife()
 
-    if (lifeGained) {
-      const currentLives = skier.getLives()
-      console.log('Extra life gained! Lives now:', currentLives)
-
-      // Update message to show current lives
+      // Show extra life message
       if (extraLifeMessageDisplay) {
-        extraLifeMessageDisplay.textContent = `☕ HOT CHOCOLATE! LIVES: ${currentLives} ☕`
+        extraLifeMessageDisplay.textContent = `Hot Chocolate! +1 Life (${skier.getLives()})!`
+        showExtraLifeMessage()
       }
-
-      // Show message
-      showExtraLifeMessage()
 
       // Update the UI
       updateLivesDisplay()
 
       // Create floating point indicator
-      skier.createPointIndicator('☕', skier.getPosition())
+      skier.createPointIndicator(20, skier.getPosition())
     }
 
     // Remove hot chocolate from scene
@@ -648,22 +657,21 @@ export const createSkiGame = (container: HTMLElement) => {
       }, 2000)
     }
 
-    // Update skier with controls input
-    // In demo mode, let the skier move automatically
+    // Demo mode AI control - make the skier automatically dodge obstacles
     if (isDemoMode) {
-      // Simple automatic movement for demo mode
+      // Simple AI: move randomly to simulate player input
       const demoInputs = {
-        left: Math.random() < 0.1,
-        right: Math.random() < 0.1,
+        left: Math.random() > 0.95, // 5% chance to move left
+        right: Math.random() > 0.95, // 5% chance to move right
         up: false,
         down: false,
       }
 
       // Avoid obstacles by moving randomly
-      skier.update(demoInputs, speed, deltaTime * 60) // Scale for compatibility with original speeds
+      skier.update(demoInputs, speed)
     } else {
       // Normal user controls
-      skier.update(controls.getInputs(), speed, deltaTime * 60) // Scale for compatibility with original speeds
+      skier.update(controls.getInputs(), speed)
     }
 
     // Check if skier landed from a jump and update flip count in score manager

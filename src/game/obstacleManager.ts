@@ -14,9 +14,166 @@ export const createObstacleManager = (scene: THREE.Scene) => {
   const obstacleTypes = ['tree', 'rock', 'jumpRamp', 'hotChocolate']
   const jumpFrequency = 0.4 // Increased probability of jumps (40%)
   const hotChocolateFrequency = 0.05 // Significantly increase hot chocolate frequency (20%)
+  const bannerFrequency = 0.01 // Replace approximately 1% of trees with banners (roughly every 100th tree)
+  const maxVisibleBanners = 2 // Maximum number of banners visible at once
+
+  // Fence settings
+  const fenceSegmentLength = 5
+  const fenceHeight = 1.2
+  const trackWidth = 16 // Total width of the track
+  const fenceDistance = trackWidth / 2 + 3 // Position fences further out from the edge of the track
+  const maxFenceSegments = 30 // Number of fence segments to maintain
+  const bannerOnFenceFrequency = 0.6 // 60% chance for a fence segment to have a banner
 
   // Store active obstacles
   const obstacles: Obstacle[] = []
+
+  // Store fence segments
+  const fenceSegments: FenceSegment[] = []
+
+  // Store available banners
+  const bannerImages = ['pockethost.webp', 'pocketbase.webp', 'pocketpages.webp'] // All banner filenames in public/banners/
+  let treeCounter = 0 // Counter to track how many trees have been created
+
+  // Store visible banners (both standalone and on fences)
+  const visibleBanners = {
+    standalone: [] as Obstacle[],
+    onFence: [] as THREE.Group[],
+    getCount: () => visibleBanners.standalone.length + visibleBanners.onFence.length,
+  }
+
+  // Precache resources for performance
+  const precachedResources = {
+    // Precached geometries
+    geometries: {
+      bannerPlane: new THREE.PlaneGeometry(12, 3), // 4:1 aspect ratio (6x larger than original)
+      bannerPole: new THREE.CylinderGeometry(0.15, 0.15, 10, 8),
+      fencePost: new THREE.CylinderGeometry(0.1, 0.1, fenceHeight * 1.2, 8),
+      fenceBar: new THREE.BoxGeometry(0.08, 0.08, fenceSegmentLength),
+    },
+    // Precached materials
+    materials: {
+      wood: new THREE.MeshStandardMaterial({ color: 0x8b4513 }), // Brown
+      bannerMaterials: [] as THREE.MeshStandardMaterial[],
+    },
+    // Cache for banner textures
+    textures: [] as THREE.Texture[],
+    // Object pools for reuse
+    objectPools: {
+      bannerGroups: [] as THREE.Group[],
+      activeBannerGroups: new Set<THREE.Group>(),
+    },
+  }
+
+  // Preload all banner textures
+  const preloadTextures = () => {
+    const textureLoader = new THREE.TextureLoader()
+    bannerImages.forEach((image, index) => {
+      const texture = textureLoader.load(`/banners/${image}`)
+      precachedResources.textures[index] = texture
+
+      // Create material for this texture
+      const material = new THREE.MeshStandardMaterial({
+        map: texture,
+        transparent: true,
+        side: THREE.DoubleSide,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.2,
+        emissiveMap: texture,
+      })
+      precachedResources.materials.bannerMaterials[index] = material
+    })
+  }
+
+  // Create reusable banner groups
+  const createBannerObjectPool = (poolSize: number) => {
+    for (let i = 0; i < poolSize; i++) {
+      // For each banner image, create some reusable groups
+      bannerImages.forEach((_, imageIndex) => {
+        // Create group for the banner
+        const bannerGroup = new THREE.Group()
+
+        // Create pole
+        const pole = new THREE.Mesh(
+          precachedResources.geometries.bannerPole,
+          precachedResources.materials.wood
+        )
+        pole.castShadow = true
+        bannerGroup.add(pole)
+
+        // Create banner mesh
+        const bannerMesh = new THREE.Mesh(
+          precachedResources.geometries.bannerPlane,
+          precachedResources.materials.bannerMaterials[imageIndex]
+        )
+        bannerMesh.castShadow = true
+        bannerGroup.add(bannerMesh)
+
+        // Add to pool but not to scene yet
+        bannerGroup.visible = false
+        scene.add(bannerGroup)
+        precachedResources.objectPools.bannerGroups.push(bannerGroup)
+      })
+    }
+  }
+
+  // Get a banner from the pool
+  const getBannerFromPool = (
+    imageIndex: number,
+    side: 'left' | 'right'
+  ): THREE.Group | undefined => {
+    // Check if we're already at max banners
+    if (visibleBanners.getCount() >= maxVisibleBanners) {
+      return undefined
+    }
+
+    // Find a banner with the right image that's not currently active
+    for (const bannerGroup of precachedResources.objectPools.bannerGroups) {
+      if (!precachedResources.objectPools.activeBannerGroups.has(bannerGroup)) {
+        // Check if this banner has the right material
+        const bannerMesh = bannerGroup.children[1] as THREE.Mesh
+        if (bannerMesh.material === precachedResources.materials.bannerMaterials[imageIndex]) {
+          // Configure the banner for the correct side
+          const pole = bannerGroup.children[0]
+          pole.position.set(0, 5, 0) // Half of poleHeight
+
+          const banner = bannerGroup.children[1]
+          const bannerHeight = 9 // poleHeight - 1
+          // Position banners to extend further inward toward the playing field
+          const bannerOffset = side === 'left' ? 4 : -4
+          banner.position.set(bannerOffset, bannerHeight, 0)
+
+          // Rotate banner to face the track (inward)
+          if (side === 'left') {
+            banner.rotation.y = Math.PI / 2 // Left side fence banners face right (inward)
+          } else {
+            banner.rotation.y = -Math.PI / 2 // Right side fence banners face left (inward)
+          }
+
+          // Mark as active
+          bannerGroup.visible = true
+          precachedResources.objectPools.activeBannerGroups.add(bannerGroup)
+          visibleBanners.onFence.push(bannerGroup)
+          return bannerGroup
+        }
+      }
+    }
+    return undefined // No available banner found
+  }
+
+  // Return banner to pool
+  const returnBannerToPool = (bannerGroup?: THREE.Group) => {
+    if (!bannerGroup) return
+
+    bannerGroup.visible = false
+    precachedResources.objectPools.activeBannerGroups.delete(bannerGroup)
+
+    // Remove from visible banners
+    const index = visibleBanners.onFence.indexOf(bannerGroup)
+    if (index !== -1) {
+      visibleBanners.onFence.splice(index, 1)
+    }
+  }
 
   // Obstacle interface
   interface Obstacle {
@@ -26,14 +183,137 @@ export const createObstacleManager = (scene: THREE.Scene) => {
     size: { width: number; height: number; depth: number }
     isCollidable: boolean
     isPickup?: boolean
+    isBanner?: boolean
+  }
+
+  // Fence segment interface
+  interface FenceSegment {
+    mesh: THREE.Object3D
+    position: { x: number; y: number; z: number }
+    side: 'left' | 'right'
+    hasBanner: boolean
+    bannerGroup?: THREE.Group
+  }
+
+  // Create a banner sign obstacle
+  const createBannerSign = (position: THREE.Vector3): Obstacle => {
+    // Create sign post
+    const postGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 8)
+    const post = new THREE.Mesh(postGeometry, precachedResources.materials.wood)
+    post.position.y = 1.5
+    post.castShadow = true
+
+    // Randomly select a banner image
+    const randomBannerIndex = Math.floor(Math.random() * bannerImages.length)
+
+    // Create banner plane
+    const bannerGeometry = new THREE.PlaneGeometry(4, 1) // 4:1 aspect ratio for 800x200 images
+
+    const banner = new THREE.Mesh(
+      bannerGeometry,
+      precachedResources.materials.bannerMaterials[randomBannerIndex]
+    )
+    banner.position.y = 2.5 // Place above the post
+    banner.castShadow = true
+
+    // Create group for the sign
+    const signGroup = new THREE.Group()
+    signGroup.add(post)
+    signGroup.add(banner)
+
+    // Face the banner toward the player
+    signGroup.rotation.y = Math.PI / 2
+
+    signGroup.position.copy(position)
+
+    // Add to scene
+    scene.add(signGroup)
+
+    const obstacle = {
+      mesh: signGroup,
+      type: 'tree', // Consider it a tree for collision purposes
+      position: { x: position.x, y: position.y, z: position.z },
+      size: { width: 4, height: 3.5, depth: 0.5 },
+      isCollidable: true,
+      isBanner: true,
+    }
+
+    // Add to visible banners
+    visibleBanners.standalone.push(obstacle)
+
+    return obstacle
+  }
+
+  // Create a fence segment
+  const createFenceSegment = (position: THREE.Vector3, side: 'left' | 'right'): FenceSegment => {
+    // Create a group for the fence segment
+    const fenceGroup = new THREE.Group()
+
+    // Create posts
+    const createPost = (z: number) => {
+      const post = new THREE.Mesh(
+        precachedResources.geometries.fencePost,
+        precachedResources.materials.wood
+      )
+      post.position.set(0, fenceHeight / 2, z)
+      post.castShadow = true
+      return post
+    }
+
+    // Add start and end posts (along Z-axis for parallel down the slope)
+    fenceGroup.add(createPost(-fenceSegmentLength / 2))
+    fenceGroup.add(createPost(fenceSegmentLength / 2))
+
+    // Create horizontal bars (2 bars)
+    for (let i = 0; i < 2; i++) {
+      const barHeight = (fenceHeight * (i + 1)) / 3 // Position at 1/3 and 2/3 of fence height
+      const bar = new THREE.Mesh(
+        precachedResources.geometries.fenceBar,
+        precachedResources.materials.wood
+      )
+      bar.position.set(0, barHeight, 0)
+      bar.castShadow = true
+      fenceGroup.add(bar)
+    }
+
+    // Determine if this fence segment should have a banner
+    const hasBanner = Math.random() < bannerOnFenceFrequency
+    let bannerGroup: THREE.Group | undefined = undefined
+
+    if (hasBanner) {
+      // Randomly select a banner image
+      const randomBannerIndex = Math.floor(Math.random() * bannerImages.length)
+
+      // Get a banner from the pool
+      bannerGroup = getBannerFromPool(randomBannerIndex, side)
+
+      // If we got a banner, add it to our fence group
+      if (bannerGroup) {
+        bannerGroup.position.copy(position)
+        // We don't need to add it to the scene as it's already there
+      }
+    }
+
+    // Position the fence segment
+    fenceGroup.position.copy(position)
+
+    // Add to scene
+    scene.add(fenceGroup)
+
+    return {
+      mesh: fenceGroup,
+      position: { x: position.x, y: position.y, z: position.z },
+      side,
+      hasBanner,
+      bannerGroup,
+    }
   }
 
   // Create a tree obstacle
   const createTree = (position: THREE.Vector3): Obstacle => {
     // Create tree trunk
     const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8)
-    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 }) // Brown
-    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial)
+    const trunk = new THREE.Mesh(trunkGeometry, precachedResources.materials.wood)
     trunk.position.y = 1
     trunk.castShadow = true
 
@@ -374,7 +654,18 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
     switch (type) {
       case 'tree':
-        obstacle = createTree(new THREE.Vector3(x, 0, z))
+        treeCounter++
+        // Every 100th tree (approximately), create a banner sign instead
+        // Only create a banner if we're under the maximum visible banners
+        if (
+          treeCounter % 100 === 0 &&
+          bannerImages.length > 0 &&
+          visibleBanners.getCount() < maxVisibleBanners
+        ) {
+          obstacle = createBannerSign(new THREE.Vector3(x, 0, z))
+        } else {
+          obstacle = createTree(new THREE.Vector3(x, 0, z))
+        }
         break
       case 'rock':
         obstacle = createRock(new THREE.Vector3(x, 0, z))
@@ -394,11 +685,32 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
   // Initialize obstacles
   const initialize = () => {
+    // Preload resources
+    preloadTextures()
+
+    // Create object pools
+    // Calculate pool size based on max segments and banner frequency
+    const estimatedMaxBanners = Math.ceil(maxFenceSegments * 2 * bannerOnFenceFrequency * 1.5) // 2 sides, with 50% extra for safety
+    createBannerObjectPool(estimatedMaxBanners)
+
     // Create initial obstacles
     for (let i = 0; i < maxObstacles; i++) {
       // Distribute obstacles along the slope
       const z = 10 + (i * obstacleSpawnRange) / maxObstacles
       createRandomObstacle(z)
+    }
+
+    // Create initial fence segments on both sides
+    for (let i = 0; i < maxFenceSegments; i++) {
+      const z = -fenceSegmentLength * i
+
+      // Left side fence
+      const leftPosition = new THREE.Vector3(-fenceDistance, 0, z - fenceSegmentLength / 2)
+      fenceSegments.push(createFenceSegment(leftPosition, 'left'))
+
+      // Right side fence
+      const rightPosition = new THREE.Vector3(fenceDistance, 0, z - fenceSegmentLength / 2)
+      fenceSegments.push(createFenceSegment(rightPosition, 'right'))
     }
   }
 
@@ -427,9 +739,30 @@ export const createObstacleManager = (scene: THREE.Scene) => {
       }
     })
 
+    // Move all fence segments toward the player
+    fenceSegments.forEach((segment) => {
+      segment.position.z += speed
+      if (segment.mesh) {
+        segment.mesh.position.z = segment.position.z
+      }
+
+      // Move associated banner group if present
+      if (segment.bannerGroup) {
+        segment.bannerGroup.position.z = segment.position.z
+      }
+    })
+
     // Remove obstacles that are behind the player and add new ones
     for (let i = obstacles.length - 1; i >= 0; i--) {
       if (obstacles[i].position.z > 10) {
+        // If this was a banner, remove it from visible banners
+        if (obstacles[i].isBanner) {
+          const index = visibleBanners.standalone.indexOf(obstacles[i])
+          if (index !== -1) {
+            visibleBanners.standalone.splice(index, 1)
+          }
+        }
+
         // Remove from scene
         scene.remove(obstacles[i].mesh)
 
@@ -438,6 +771,39 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
         // Create a new obstacle at the far end
         createRandomObstacle(obstacleSpawnRange)
+      }
+    }
+
+    // Remove fence segments that are behind the player and add new ones
+    for (let i = fenceSegments.length - 1; i >= 0; i--) {
+      if (fenceSegments[i].position.z + fenceSegmentLength / 2 > 10) {
+        // Return banner to pool if this segment has one
+        if (fenceSegments[i].bannerGroup) {
+          returnBannerToPool(fenceSegments[i].bannerGroup)
+        }
+
+        // Remove from scene
+        scene.remove(fenceSegments[i].mesh)
+
+        // Get the side of the removed segment
+        const side = fenceSegments[i].side
+
+        // Remove from array
+        fenceSegments.splice(i, 1)
+
+        // Find the furthest fence segment of the same side
+        let furthestZ = 0
+        fenceSegments.forEach((segment) => {
+          if (segment.side === side && segment.position.z < furthestZ) {
+            furthestZ = segment.position.z
+          }
+        })
+
+        // Create a new fence segment at the far end
+        const newZ = furthestZ - fenceSegmentLength
+        const x = side === 'left' ? -fenceDistance : fenceDistance
+        const newPosition = new THREE.Vector3(x, 0, newZ)
+        fenceSegments.push(createFenceSegment(newPosition, side))
       }
     }
 
@@ -473,6 +839,21 @@ export const createObstacleManager = (scene: THREE.Scene) => {
 
     // Clear obstacles array
     obstacles.length = 0
+
+    // Return all banners to pool
+    fenceSegments.forEach((segment) => {
+      if (segment.bannerGroup) {
+        returnBannerToPool(segment.bannerGroup)
+      }
+      scene.remove(segment.mesh)
+    })
+
+    // Clear fence segments array
+    fenceSegments.length = 0
+
+    // Clear visible banners arrays
+    visibleBanners.standalone.length = 0
+    visibleBanners.onFence.length = 0
 
     // Reinitialize
     initialize()
